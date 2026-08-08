@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Crimson Clash 3D - 绯红对弈3D</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden; background: #000;
+      font-family: 'Trebuchet MS', 'Microsoft YaHei', sans-serif;
+      user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+    #game-canvas { display: block; width: 100%; height: 100%; }
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+    .screen.active { display: flex; }
+    .screen.overlay { background: rgba(0,0,0,0.78); flex-direction: column; align-items: center; justify-content: center; }
+
+    /* Menu */
+    #menu-screen { background: radial-gradient(circle at 50% 38%, #2a0a14, #000 70%); flex-direction: column; align-items: center; justify-content: center; }
+    .title {
+      font-size: 54px; font-weight: bold; letter-spacing: 4px;
+      background: linear-gradient(180deg, #ff5050, #8a0010);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: 0 0 30px rgba(255,40,40,0.45);
+    }
+    .subtitle { color: #888; font-size: 17px; letter-spacing: 8px; margin: 6px 0 46px; }
+    .menu-btn {
+      width: 270px; padding: 15px; margin: 7px; cursor: pointer;
+      background: linear-gradient(135deg, #3a0a14, #150006);
+      border: 2px solid #7a2424; color: #ffcccc; font-size: 19px;
+      border-radius: 8px; letter-spacing: 2px; transition: 0.15s;
+    }
+    .menu-btn:hover, .menu-btn:active { background: linear-gradient(135deg, #6a1a24, #2a000c); border-color: #ff4040; box-shadow: 0 0 14px rgba(255,40,40,0.35); }
+
+    /* Select */
+    #select-screen { background: linear-gradient(160deg, #14040a, #000); flex-direction: column; padding: 14px; align-items: center; }
+    .select-title { color: #ff6060; font-size: 22px; letter-spacing: 3px; margin-bottom: 8px; }
+    .preview-wrap { width: 160px; height: 200px; margin: 4px auto 8px; }
+    #preview-canvas { width: 160px; height: 200px; background: radial-gradient(circle, #1a0610, #050003); border-radius: 10px; border: 1px solid #3a1418; }
+    .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 560px; }
+    .char-card {
+      background: linear-gradient(160deg, #240810, #0c0004); border: 2px solid #3e1818;
+      border-radius: 9px; padding: 8px 4px; cursor: pointer; text-align: center; transition: 0.12s;
+    }
+    .char-card.sel { border-color: #ff5050; box-shadow: 0 0 16px rgba(255,40,40,0.45); transform: translateY(-2px); background: linear-gradient(160deg, #3a0c16, #140006); }
+    .char-card.locked { border-color: #4060c0; box-shadow: 0 0 16px rgba(60,90,200,0.45); }
+    .cname { color: #ffe0e0; font-size: 15px; }
+    .ctitle { color: #888; font-size: 10px; margin-top: 1px; }
+    .ctype { color: #ff9a60; font-size: 10px; margin-top: 2px; }
+    .select-info { color: #bbb; font-size: 13px; margin: 8px 0; text-align: center; min-height: 18px; }
+    .select-confirm { text-align: center; }
+    .sel-btn { padding: 11px 26px; cursor: pointer; margin: 4px; font-size: 16px; border-radius: 8px; }
+    .sel-btn.primary { background: linear-gradient(135deg, #6a1a24, #2a000c); border: 2px solid #ff4040; color: #fff; }
+    .sel-btn.ghost { background: rgba(40,40,50,0.5); border: 2px solid #555; color: #ccc; }
+
+    /* Scene select */
+    #scene-screen { background: linear-gradient(160deg, #0a0414, #000); flex-direction: column; align-items: center; justify-content: center; padding: 14px; }
+    .scene-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 640px; width: 100%; }
+    .scene-card { background: linear-gradient(160deg, #181028, #05000c); border: 2px solid #2a2040; border-radius: 10px; padding: 24px 10px; cursor: pointer; text-align: center; transition: 0.12s; }
+    .scene-card.sel { border-color: #ff5050; box-shadow: 0 0 16px rgba(255,40,40,0.4); }
+    .scene-name { color: #ffe0e0; font-size: 17px; margin-top: 6px; }
+
+    /* Battle UI */
+    #battle-ui { pointer-events: none; flex-direction: column; }
+    .hud-top { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 8px 10px; pointer-events: none; }
+    .hud-side { width: 42%; }
+    .hud-side.p2 { text-align: right; }
+    .hud-name { color: #fff; font-size: 15px; text-shadow: 0 0 4px #000, 1px 1px 2px #000; margin-bottom: 2px; }
+    .bar-bg { width: 100%; height: 15px; background: rgba(0,0,0,0.6); border: 1px solid #555; border-radius: 4px; overflow: hidden; }
+    .hp-bar { height: 100%; background: linear-gradient(90deg, #ff2020, #ff8040); transition: width 0.18s; }
+    .p2 .hp-bar { float: right; }
+    .energy-bar { height: 7px; background: rgba(0,0,0,0.6); border: 1px solid #345; border-radius: 4px; margin-top: 3px; overflow: hidden; }
+    .en-fill { height: 100%; background: linear-gradient(90deg, #2080ff, #50d8ff); transition: width 0.1s; }
+    .en-fill.full { background: linear-gradient(90deg, #ffaa20, #ffe060); box-shadow: 0 0 8px #ffaa20; }
+    .p2 .en-fill { float: right; }
+    .round-pips { margin-top: 4px; }
+    .pip { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #2a2a2a; border: 1px solid #666; margin: 0 2px; }
+    .pip.win { background: #ffcc00; box-shadow: 0 0 6px #ffcc00; }
+    .hud-center { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); text-align: center; }
+    .timer { color: #ffdd44; font-size: 26px; font-weight: bold; text-shadow: 0 0 6px #000, 1px 1px 2px #000; }
+    .round-label { color: #bbb; font-size: 11px; letter-spacing: 1px; }
+
+    .combo-display { position: absolute; top: 26%; left: 50%; transform: translateX(-50%); text-align: center; opacity: 0; transition: opacity 0.18s; pointer-events: none; }
+    .combo-display.show { opacity: 1; }
+    .combo-num { font-size: 46px; font-weight: bold; color: #ffaa20; text-shadow: 0 0 10px #ff4000, 2px 2px 0 #600; }
+    .combo-text { color: #fff; font-size: 18px; letter-spacing: 3px; text-shadow: 1px 1px 2px #000; }
+
+    .announce { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); font-size: 50px; font-weight: bold; color: #ffcc00; text-shadow: 0 0 22px #ff4000, 2px 2px 0 #500; letter-spacing: 6px; opacity: 0; pointer-events: none; text-align: center; }
+    .announce.show { animation: announcePop 1.5s ease; }
+    @keyframes announcePop {
+      0% { opacity: 0; transform: translate(-50%,-50%) scale(0.3); }
+      18% { opacity: 1; transform: translate(-50%,-50%) scale(1.15); }
+      78% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+    }
+
+    .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+    .flash.fire { animation: flashAnim 0.32s ease; }
+    @keyframes flashAnim { 0%{opacity:0;} 12%{opacity:0.85;} 100%{opacity:0;} }
+
+    /* Virtual controls */
+    .controls { position: absolute; pointer-events: none; }
+    .dpad { position: absolute; width: 144px; height: 144px; pointer-events: none; }
+    .dpad-btn {
+      position: absolute; width: 54px; height: 54px;
+      background: rgba(40,42,54,0.5); border: 2px solid rgba(180,180,200,0.35);
+      border-radius: 10px; color: #ddd; font-size: 20px;
+      display: flex; align-items: center; justify-content: center; pointer-events: auto;
+    }
+    .dpad-btn.held { background: rgba(150,40,40,0.65); border-color: #ff6060; }
+    .du { left: 45px; top: 0; } .dd { left: 45px; top: 90px; }
+    .dl { left: 0; top: 45px; } .dr { left: 90px; top: 45px; }
+
+    .action-btns { position: absolute; width: 168px; height: 168px; pointer-events: none; }
+    .act-btn {
+      position: absolute; width: 56px; height: 56px; border-radius: 50%; color: #fff;
+      font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(255,255,255,0.3); pointer-events: auto; transition: transform 0.05s;
+    }
+    .act-btn.held { transform: scale(0.9); filter: brightness(1.35); }
+    .act-light { background: rgba(220,80,80,0.6); } .act-heavy { background: rgba(170,30,30,0.65); }
+    .act-skill { background: rgba(70,110,220,0.6); } .act-ultra { background: rgba(170,70,220,0.7); }
+    .act-block { background: rgba(60,170,70,0.5); } .act-dash { background: rgba(220,180,40,0.55); }
+
+    /* P1 controls: bottom */
+    #touch-p1 { left: 0; bottom: 0; width: 100%; height: 50%; }
+    #touch-p1 .dpad { left: 18px; bottom: 22px; }
+    #touch-p1 .action-btns { right: 16px; bottom: 18px; }
+    #touch-p1 .act-light { bottom: 0; right: 56px; }
+    #touch-p1 .act-heavy { bottom: 56px; right: 0; }
+    #touch-p1 .act-skill { bottom: 56px; right: 112px; }
+    #touch-p1 .act-ultra { bottom: 112px; right: 56px; }
+    #touch-p1 .act-block { bottom: 0; right: 0; }
+    #touch-p1 .act-dash { bottom: 0; right: 112px; }
+
+    /* P2 controls: top (2P only) */
+    #touch-p2 { left: 0; top: 60px; width: 100%; height: 30%; display: none; }
+    #touch-p2 .dpad { left: 18px; top: 0; transform: scale(0.82); transform-origin: top left; }
+    #touch-p2 .action-btns { right: 16px; top: 0; transform: scale(0.82); transform-origin: top right; }
+    #touch-p2 .act-light { top: 0; right: 56px; bottom: auto; }
+    #touch-p2 .act-heavy { top: 56px; right: 0; bottom: auto; }
+    #touch-p2 .act-skill { top: 56px; right: 112px; bottom: auto; }
+    #touch-p2 .act-ultra { top: 112px; right: 56px; bottom: auto; }
+    #touch-p2 .act-block { top: 0; right: 0; bottom: auto; }
+    #touch-p2 .act-dash { top: 0; right: 112px; bottom: auto; }
+
+    #hint { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: #555; font-size: 10px; pointer-events: none; text-align: center; white-space: nowrap; }
+
+    .panel { background: linear-gradient(160deg, #1a0408, #050002); border: 2px solid #6a1a24; border-radius: 14px; padding: 26px 36px; text-align: center; }
+    .panel h2 { color: #ff6060; font-size: 30px; margin-bottom: 18px; letter-spacing: 3px; }
+    #about-text { color: #999; font-size: 13px; line-height: 1.6; margin-top: 18px; max-width: 380px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="menu-screen" class="screen active">
+      <div class="title">CRIMSON CLASH</div>
+      <div class="subtitle">绯 红 对 弈 3D</div>
+      <button class="menu-btn" data-act="vs-cpu">单人对战 (VS CPU)</button>
+      <button class="menu-btn" data-act="vs-2p">双人对战 (2P)</button>
+      <button class="menu-btn" data-act="about">关于</button>
+      <div id="about-text"></div>
+    </div>
+
+    <div id="select-screen" class="screen">
+      <div class="select-title" id="select-title">选择角色 - P1</div>
+      <div class="preview-wrap"><canvas id="preview-canvas"></canvas></div>
+      <div class="char-grid" id="char-grid"></div>
+      <div class="select-info" id="select-info"></div>
+      <div class="select-confirm">
+        <button class="sel-btn ghost" id="back-btn">返回</button>
+        <button class="sel-btn primary" id="next-btn">下一步</button>
+      </div>
+    </div>
+
+    <div id="scene-screen" class="screen">
+      <div class="select-title">选择场景</div>
+      <div class="scene-grid" id="scene-grid"></div>
+      <div class="select-confirm" style="margin-top:18px;">
+        <button class="sel-btn ghost" id="scene-back">返回</button>
+        <button class="sel-btn primary" id="scene-start">开始战斗</button>
+      </div>
+    </div>
+
+    <div id="battle-ui" class="screen">
+      <div class="hud-top">
+        <div class="hud-side p1">
+          <div class="hud-name" id="p1-name">P1</div>
+          <div class="bar-bg"><div class="hp-bar" id="p1-hp"></div></div>
+          <div class="energy-bar"><div class="en-fill" id="p1-en"></div></div>
+          <div class="round-pips" id="p1-pips"></div>
+        </div>
+        <div class="hud-side p2">
+          <div class="hud-name" id="p2-name">P2</div>
+          <div class="bar-bg"><div class="hp-bar" id="p2-hp"></div></div>
+          <div class="energy-bar"><div class="en-fill" id="p2-en"></div></div>
+          <div class="round-pips" id="p2-pips"></div>
+        </div>
+      </div>
+      <div class="hud-center">
+        <div class="timer" id="timer">60</div>
+        <div class="round-label" id="round-label">第 1 回合</div>
+      </div>
+      <div class="combo-display" id="combo-display">
+        <div class="combo-num" id="combo-num">0</div>
+        <div class="combo-text">HIT!</div>
+      </div>
+      <div class="announce" id="announce"></div>
+      <div class="flash" id="flash"></div>
+
+      <div class="controls" id="touch-p1">
+        <div class="dpad">
+          <div class="dpad-btn du" data-player="p1" data-key="up">▲</div>
+          <div class="dpad-btn dd" data-player="p1" data-key="down">▼</div>
+          <div class="dpad-btn dl" data-player="p1" data-key="left">◀</div>
+          <div class="dpad-btn dr" data-player="p1" data-key="right">▶</div>
+        </div>
+        <div class="action-btns">
+          <div class="act-btn act-light" data-player="p1" data-key="light">轻</div>
+          <div class="act-btn act-heavy" data-player="p1" data-key="heavy">重</div>
+          <div class="act-btn act-skill" data-player="p1" data-key="skill">技</div>
+          <div class="act-btn act-ultra" data-player="p1" data-key="ultra">必</div>
+          <div class="act-btn act-block" data-player="p1" data-key="block">防</div>
+          <div class="act-btn act-dash" data-player="p1" data-key="dash">闪</div>
+        </div>
+      </div>
+
+      <div class="controls" id="touch-p2">
+        <div class="dpad">
+          <div class="dpad-btn du" data-player="p2" data-key="up">▲</div>
+          <div class="dpad-btn dd" data-player="p2" data-key="down">▼</div>
+          <div class="dpad-btn dl" data-player="p2" data-key="left">◀</div>
+          <div class="dpad-btn dr" data-player="p2" data-key="right">▶</div>
+        </div>
+        <div class="action-btns">
+          <div class="act-btn act-light" data-player="p2" data-key="light">轻</div>
+          <div class="act-btn act-heavy" data-player="p2" data-key="heavy">重</div>
+          <div class="act-btn act-skill" data-player="p2" data-key="skill">技</div>
+          <div class="act-btn act-ultra" data-player="p2" data-key="ultra">必</div>
+          <div class="act-btn act-block" data-player="p2" data-key="block">防</div>
+          <div class="act-btn act-dash" data-player="p2" data-key="dash">闪</div>
+        </div>
+      </div>
+
+      <div id="hint">P1: WASD移动 J轻 K重 U技 I必 空格防 L闪 | ESC暂停</div>
+    </div>
+
+    <div id="pause-screen" class="screen overlay">
+      <div class="panel">
+        <h2>暂停</h2>
+        <button class="menu-btn" data-act="resume">继续</button>
+        <button class="menu-btn" data-act="restart">重开</button>
+        <button class="menu-btn" data-act="quit">返回主菜单</button>
+      </div>
+    </div>
+
+    <div id="result-screen" class="screen overlay">
+      <div class="panel">
+        <h2 id="result-title">胜利</h2>
+        <div id="result-detail" style="color:#ccc;margin-bottom:18px;font-size:15px;"></div>
+        <button class="menu-btn" data-act="rematch">再战</button>
+        <button class="menu-btn" data-act="quit">返回主菜单</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Three.js r160 加载器（带多CDN回退）。cdnjs 的 r160 文件夹不存在(使用 0.160.0)，故依次尝试多个源。
+  (function () {
+    var urls = [
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js',
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js',
+      'https://unpkg.com/three@0.160.0/build/three.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js'
+    ];
+    var i = 0;
+    function tryNext() {
+      if (i >= urls.length) { console.error('Three.js 从所有CDN加载失败'); return; }
+      var s = document.createElement('script');
+      s.src = urls[i];
+      s.onload = function () { if (!window.THREE) { i++; tryNext(); } };
+      s.onerror = function () { i++; tryNext(); };
+      document.head.appendChild(s);
+    }
+    tryNext();
+  })();
+  </script>
+  <script>
+  (function () {
+    'use strict';
+
+    // ============================================================
+    //  数据
+    // ============================================================
+    const CHARACTERS = [
+      { name: '凉音', title: '水手服冷感少女', type: 'balanced', hp: 280, attack: 30, speed: 5.2,
+        hairColor: 0x1a1a2e, hairStyle: 'short', outfitColor: 0x1a3a5e, outfitAccent: 0xffffff, skinColor: 0xf5dccc },
+      { name: '灰夜', title: '孤寂少年感角色', type: 'speed', hp: 220, attack: 35, speed: 5.8,
+        hairColor: 0x2a2a2a, hairStyle: 'medium', outfitColor: 0x3a3a4a, outfitAccent: 0x555555, skinColor: 0xe5ccb8 },
+      { name: '璃月', title: '贵族长发少女', type: 'ranged', hp: 200, attack: 38, speed: 4.2,
+        hairColor: 0x4a4a6a, hairStyle: 'long', outfitColor: 0x6a2a4a, outfitAccent: 0xffeecc, skinColor: 0xf5dccc },
+      { name: '刹那', title: '冷酷短发少女', type: 'grappler', hp: 260, attack: 32, speed: 5.5,
+        hairColor: 0x888888, hairStyle: 'short', outfitColor: 0x2a2a2a, outfitAccent: 0x888888, skinColor: 0xe5ccb8 },
+      { name: '绯刃', title: '眼罩战斗少女', type: 'assassin', hp: 210, attack: 40, speed: 6.0,
+        hairColor: 0x2a1a1a, hairStyle: 'spiky', outfitColor: 0x4a1a1a, outfitAccent: 0x8a2a2a, skinColor: 0xf5dccc },
+      { name: '猫音', title: '猫耳校服少女', type: 'combo', hp: 250, attack: 28, speed: 5.6,
+        hairColor: 0xe8c97a, hairStyle: 'cat', outfitColor: 0xf0d49a, outfitAccent: 0x8b5a2b, skinColor: 0xf5dccc }
+    ];
+    const TYPE_NAME = { balanced:'平衡', speed:'速攻', ranged:'远程', grappler:'投技', assassin:'刺客', combo:'连击' };
+
+    const SCENES = [
+      { name: '废弃都市', sky: 0x14141c, fog: 0x1a1a22, ground: 0x2e2e2e, light: 0x8890a0 },
+      { name: '雨夜走廊', sky: 0x0a1220, fog: 0x0e1626, ground: 0x1c2838, light: 0x6688cc },
+      { name: '贵族大厅', sky: 0x241828, fog: 0x2a1c2e, ground: 0x4a3a4a, light: 0xffd9a0 }
+    ];
+
+    // ============================================================
+    //  全局状态
+    // ============================================================
+    let scene, camera, renderer, clock;
+    let webglOK = false;
+    let p1, p2;
+    let sceneObjects = [];
+    let particles = [];
+    let shockwaves = [];
+    let projectiles = [];
+    let trails = [];
+
+    let gameState = 'menu'; // menu, select, scene, battle, pause, result
+    let cpuMode = true;
+    let selectStage = 'p1'; // p1 / p2
+    let selP1 = 0, selP2 = 1, selScene = 0;
+    let selectCardP1 = 0, selectCardP2 = 0;
+
+    let roundWins = { p1: 0, p2: 0 };
+    let roundTime = 60;
+    let roundNum = 1;
+    let roundPhase = 'intro'; // intro, fight, active, end
+    let phaseTimer = 0;
+    let roundActive = false;
+    let inputLocked = true;
+    let paused = false;
+
+    let comboTracker = { count: 0, timer: 0, side: '' };
+    let camShake = 0;
+
+    // 预览
+    let previewScene, previewCamera, previewRenderer, previewChar = null, previewBaseY = 0;
+
+    // AI
+    let aiTimer = 0, aiAction = 'idle', aiActionTimer = 0;
+
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    // ============================================================
+    //  角色构建
+    // ============================================================
+    function makeMat(color) {
+      return new THREE.MeshStandardMaterial({ color: color, roughness: 0.7, metalness: 0.1 });
+    }
+
+    function makeLimb(mat, len, w, depth) {
+      const g = new THREE.Group();
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, len, depth || w), mat);
+      m.position.y = -len / 2;
+      m.castShadow = false;
+      g.add(m);
+      return g;
+    }
+
+    function buildHair(charData, hairMat) {
+      const hair = new THREE.Group();
+      const s = charData.hairStyle;
+      if (s === 'short') {
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.5), hairMat);
+        top.position.y = 0.16; hair.add(top);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.1), hairMat);
+        fr.position.set(0, 0.08, 0.22); hair.add(fr);
+        const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.4), hairMat);
+        l.position.set(-0.24, 0.04, 0); hair.add(l);
+        const r = l.clone(); r.position.x = 0.24; hair.add(r);
+      } else if (s === 'medium') {
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.24, 0.5), hairMat);
+        top.position.y = 0.16; hair.add(top);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.1), hairMat);
+        fr.position.set(0, 0.06, 0.22); hair.add(fr);
+        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.4), hairMat);
+        l.position.set(-0.26, -0.12, 0); hair.add(l);
+        const r = l.clone(); r.position.x = 0.26; hair.add(r);
+      } else if (s === 'long') {
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.24, 0.5), hairMat);
+        top.position.y = 0.16; hair.add(top);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.16, 0.1), hairMat);
+        fr.position.set(0, 0.06, 0.22); hair.add(fr);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.46, 1.1, 0.12), hairMat);
+        back.position.set(0, -0.35, -0.22); hair.add(back);
+        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.34), hairMat);
+        l.position.set(-0.26, -0.25, 0); hair.add(l);
+        const r = l.clone(); r.position.x = 0.26; hair.add(r);
+      } else if (s === 'spiky') {
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.18, 0.48), hairMat);
+        top.position.y = 0.14; hair.add(top);
+        for (let i = 0; i < 6; i++) {
+          const c = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.34, 4), hairMat);
+          const a = (i / 6) * Math.PI * 2;
+          c.position.set(Math.cos(a) * 0.2, 0.32, Math.sin(a) * 0.2);
+          c.rotation.z = Math.cos(a) * 0.4;
+          c.rotation.x = Math.sin(a) * 0.4;
+          hair.add(c);
+        }
+        const fc = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 4), hairMat);
+        fc.position.set(0, 0.34, 0.12); hair.add(fc);
+      } else if (s === 'cat') {
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.5), hairMat);
+        top.position.y = 0.15; hair.add(top);
+        const earL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.26, 4), hairMat);
+        earL.position.set(-0.18, 0.34, 0); earL.rotation.z = 0.2; hair.add(earL);
+        const earR = earL.clone(); earR.position.x = 0.18; earR.rotation.z = -0.2; hair.add(earR);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.9, 0.12), hairMat);
+        back.position.set(0, -0.3, -0.22); hair.add(back);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.1), hairMat);
+        fr.position.set(0, 0.06, 0.22); hair.add(fr);
+      }
+      return hair;
+    }
+
+    function buildCharacter(charData) {
+      const group = new THREE.Group();
+      const skinMat = makeMat(charData.skinColor);
+      const outfitMat = makeMat(charData.outfitColor);
+      const accentMat = makeMat(charData.outfitAccent);
+      const hairMat = makeMat(charData.hairColor);
+      const materials = [skinMat, outfitMat, accentMat, hairMat];
+
+      // 躯干
+      const torso = new THREE.Group();
+      const chest = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.42), outfitMat);
+      chest.position.y = 0.28; torso.add(chest);
+      const waist = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.4), accentMat);
+      waist.position.y = -0.12; torso.add(waist);
+      const collar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.44), accentMat);
+      collar.position.y = 0.58; torso.add(collar);
+      torso.position.y = 1.35;
+
+      // 头部
+      const head = new THREE.Group();
+      const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.44, 0.44), skinMat);
+      headMesh.position.y = 0; head.add(headMesh);
+      const neck = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.18), skinMat);
+      neck.position.y = -0.27; head.add(neck);
+      // 眼睛
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.02), eyeMat);
+      eyeL.position.set(-0.1, 0.02, 0.22); head.add(eyeL);
+      const eyeR = eyeL.clone(); eyeR.position.x = 0.1; head.add(eyeR);
+      // 头发
+      const hair = buildHair(charData, hairMat);
+      head.add(hair);
+      head.position.y = 2.0;
+
+      // 手臂
+      const leftArm = makeLimb(outfitMat, 0.62, 0.16);
+      leftArm.position.set(-0.46, 1.68, 0);
+      const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.17, 0.17), skinMat);
+      leftHand.position.y = -0.66; leftArm.add(leftHand);
+      const rightArm = makeLimb(outfitMat, 0.62, 0.16);
+      rightArm.position.set(0.46, 1.68, 0);
+      const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.17, 0.17), skinMat);
+      rightHand.position.y = -0.66; rightArm.add(rightHand);
+
+      // 腿
+      const leftLeg = makeLimb(outfitMat, 0.78, 0.2, 0.24);
+      leftLeg.position.set(-0.18, 0.86, 0);
+      const leftFoot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.32), accentMat);
+      leftFoot.position.set(0, -0.82, 0.06); leftLeg.add(leftFoot);
+      const rightLeg = makeLimb(outfitMat, 0.78, 0.2, 0.24);
+      rightLeg.position.set(0.18, 0.86, 0);
+      const rightFoot = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.32), accentMat);
+      rightFoot.position.set(0, -0.82, 0.06); rightLeg.add(rightFoot);
+
+      group.add(torso, head, leftArm, rightArm, leftLeg, rightLeg);
+
+      // 光晕(必杀用)
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0xffcc40, transparent: true, opacity: 0 });
+      const aura = new THREE.Mesh(new THREE.SphereGeometry(1.0, 12, 10), glowMat);
+      aura.position.y = 1.0; aura.visible = false; group.add(aura);
+
+      return { group, head, torso, leftArm, rightArm, leftLeg, rightLeg, materials, aura, glowMat, eyeL, eyeR };
+    }
+
+    // ============================================================
+    //  动画
+    // ============================================================
+    function resetPose(c) {
+      c.torso.rotation.set(0, 0, 0);
+      c.torso.position.set(c.torso.userData.bx, c.torso.userData.by, 0);
+      c.head.position.set(0, 2.0, 0);
+      c.head.rotation.set(0, 0, 0);
+      c.leftArm.rotation.set(0, 0, 0);
+      c.rightArm.rotation.set(0, 0, 0);
+      c.leftLeg.rotation.set(0, 0, 0);
+      c.rightLeg.rotation.set(0, 0, 0);
+    }
+
+    function animateCharacter(c, state, t, prog, moving) {
+      resetPose(c);
+      const bx = c.torso.userData.bx, by = c.torso.userData.by;
+      switch (state) {
+        case 'idle': {
+          const b = Math.sin(t * 2.2) * 0.03;
+          c.torso.position.y = by + b;
+          c.head.position.y = 2.0 + b;
+          c.leftArm.rotation.x = Math.sin(t * 2.2) * 0.08;
+          c.rightArm.rotation.x = -Math.sin(t * 2.2) * 0.08;
+          c.head.rotation.y = Math.sin(t * 0.7) * 0.12;
+          break;
+        }
+        case 'walk': {
+          const s = t * 9;
+          c.leftLeg.rotation.x = Math.sin(s) * 0.6;
+          c.rightLeg.rotation.x = -Math.sin(s) * 0.6;
+          c.leftArm.rotation.x = -Math.sin(s) * 0.5;
+          c.rightArm.rotation.x = Math.sin(s) * 0.5;
+          c.torso.position.y = by + Math.abs(Math.sin(s)) * 0.04;
+          c.head.position.y = 2.0 + Math.abs(Math.sin(s)) * 0.04;
+          break;
+        }
+        case 'jump': {
+          c.leftLeg.rotation.x = -0.5; c.rightLeg.rotation.x = -0.5;
+          c.leftArm.rotation.x = -1.2; c.rightArm.rotation.x = -1.2;
+          break;
+        }
+        case 'light': {
+          if (prog < 0.3) { c.rightArm.rotation.x = -1.3 - prog; c.torso.rotation.x = -0.1; }
+          else if (prog < 0.55) { c.rightArm.rotation.x = 1.5; c.torso.rotation.x = 0.25; }
+          else { c.rightArm.rotation.x = 1.5 - (prog - 0.55) * 3.0; c.torso.rotation.x = 0.25 - (prog - 0.55) * 0.5; }
+          c.leftArm.rotation.x = 0.3;
+          break;
+        }
+        case 'heavy': {
+          if (prog < 0.32) { c.rightArm.rotation.x = -1.8; c.leftArm.rotation.x = -1.4; c.torso.rotation.x = -0.2; c.torso.position.y = by - 0.05; }
+          else if (prog < 0.5) { c.rightArm.rotation.x = 1.9; c.leftArm.rotation.x = 1.2; c.torso.rotation.x = 0.45; c.torso.position.y = by + 0.05; }
+          else { c.rightArm.rotation.x = 1.9 - (prog - 0.5) * 3.5; c.torso.rotation.x = 0.45 - (prog - 0.5) * 0.9; }
+          break;
+        }
+        case 'skill': {
+          if (prog < 0.45) { c.leftArm.rotation.x = -1.4; c.rightArm.rotation.x = -1.4; c.torso.rotation.x = -0.3; c.torso.position.y = by - 0.08; }
+          else if (prog < 0.6) { c.leftArm.rotation.x = 1.4; c.rightArm.rotation.x = 1.4; c.torso.rotation.x = 0.2; }
+          else { c.leftArm.rotation.x = 1.4 - (prog - 0.6) * 3.0; c.rightArm.rotation.x = 1.4 - (prog - 0.6) * 3.0; }
+          break;
+        }
+        case 'ultra': {
+          if (prog < 0.35) { c.leftArm.rotation.x = -2.2; c.rightArm.rotation.x = -2.2; c.torso.rotation.x = -0.4; }
+          else if (prog < 0.65) { c.leftArm.rotation.x = 1.0; c.rightArm.rotation.x = 1.0; c.torso.rotation.x = 0.5; c.leftLeg.rotation.x = -0.3; c.rightLeg.rotation.x = -0.3; }
+          else { c.leftArm.rotation.x = 0.4; c.rightArm.rotation.x = 0.4; c.torso.rotation.x = 0.2 - (prog - 0.65); }
+          break;
+        }
+        case 'block': {
+          c.leftArm.rotation.x = 1.1; c.rightArm.rotation.x = 1.1;
+          c.leftArm.rotation.z = 0.5; c.rightArm.rotation.z = -0.5;
+          c.torso.rotation.x = -0.12;
+          break;
+        }
+        case 'dash': {
+          c.torso.rotation.x = 0.35;
+          c.leftArm.rotation.x = -1.6; c.rightArm.rotation.x = -1.6;
+          c.leftLeg.rotation.x = -0.5; c.rightLeg.rotation.x = 0.5;
+          break;
+        }
+        case 'hurt': {
+          c.torso.rotation.x = -0.4 - prog * 0.3;
+          c.head.rotation.x = -0.3;
+          c.leftArm.rotation.x = -0.8; c.rightArm.rotation.x = -0.8;
+          break;
+        }
+        case 'knockdown': {
+          c.torso.rotation.x = -1.2;
+          c.head.rotation.x = -0.4;
+          c.leftLeg.rotation.x = 0.6; c.rightLeg.rotation.x = 0.6;
+          break;
+        }
+        case 'dead': {
+          c.torso.rotation.x = -1.4;
+          c.head.rotation.x = -0.5;
+          break;
+        }
+        default: break;
+      }
+    }
+
+    // ============================================================
+    //  Fighter
+    // ============================================================
+    const STATE_DUR = { light: 0.36, heavy: 0.66, skill: 0.72, ultra: 1.3, dash: 0.24, hurt: 0.4, knockdown: 0.7, getup: 0.4 };
+    const ACTIVE_WIN = { light: [0.28, 0.5], heavy: [0.34, 0.5], ultra: [0.4, 0.62] };
+    const RANGES = { light: 1.35, heavy: 1.55, ultra: 2.4 };
+
+    class Fighter {
+      constructor(charData, side) {
+        this.charData = charData;
+        this.side = side;
+        this.maxHp = charData.hp;
+        this.hp = charData.hp;
+        this.energy = 0;
+        this.maxEnergy = 50;
+        this.speed = charData.speed;
+        this.attack = charData.attack;
+        this.x = side === 'p1' ? -3 : 3;
+        this.z = 0; this.y = 0;
+        this.facing = side === 'p1' ? 1 : -1;
+        this.state = 'idle';
+        this.stateTime = 0;
+        this.velocityX = 0; this.velocityY = 0;
+        this.invincibleTime = 0;
+        this.attackCooldown = 0;
+        this.dead = false;
+        this.grounded = true;
+        this.blockHeld = false;
+        this.hitRegistered = false;
+        this.skillFired = false;
+        this.flashTime = 0;
+
+        const built = buildCharacter(charData);
+        this.model = built;
+        this.parts = built;
+        built.torso.userData.bx = 0; built.torso.userData.by = 1.35;
+        built.group.position.set(this.x, this.y, this.z);
+        built.group.rotation.y = this.facing > 0 ? 0 : Math.PI;
+        this.baseColors = this.parts.materials.map(m => m.color.getHex());
+        this.applyNormal();
+      }
+
+      applyNormal() {
+        this.parts.materials.forEach((m, i) => { m.color.setHex(this.baseColors[i]); m.emissive.setHex(0x000000); });
+      }
+      applyTint(hex) {
+        this.parts.materials.forEach(m => { m.color.setHex(hex); m.emissive.setHex(0x000000); });
+      }
+
+      resetForRound() {
+        this.hp = this.maxHp;
+        this.energy = 0;
+        this.x = this.side === 'p1' ? -3 : 3;
+        this.z = 0; this.y = 0;
+        this.velocityX = 0; this.velocityY = 0;
+        this.facing = this.side === 'p1' ? 1 : -1;
+        this.state = 'idle'; this.stateTime = 0;
+        this.invincibleTime = 0; this.attackCooldown = 0;
+        this.dead = false; this.grounded = true; this.blockHeld = false;
+        this.hitRegistered = false; this.skillFired = false; this.flashTime = 0;
+        this.model.group.position.set(this.x, this.y, this.z);
+        this.model.group.rotation.y = this.facing > 0 ? 0 : Math.PI;
+        this.applyNormal();
+        this.model.aura.visible = false;
+      }
+
+      get opponent() { return this.side === 'p1' ? p2 : p1; }
+
+      isInterruptible() {
+        return ['idle', 'walk', 'jump', 'block'].indexOf(this.state) >= 0;
+      }
+
+      setState(s) {
+        this.state = s; this.stateTime = 0;
+        this.hitRegistered = false; this.skillFired = false;
+      }
+
+      startAttack(type) {
+        if (!this.isInterruptible() && this.state !== 'jump') return false;
+        if (this.attackCooldown > 0) return false;
+        if (type === 'skill' && this.energy < 15) return false;
+        if (type === 'ultra' && this.energy < 50) return false;
+        if (type === 'skill') this.energy -= 15;
+        if (type === 'ultra') { this.energy -= 50; this.invincibleTime = 0.5; this.model.aura.visible = true; this.model.glowMat.opacity = 0.5; triggerFlash(); }
+        this.setState(type);
+        return true;
+      }
+
+      doDash(dir) {
+        if (!this.isInterruptible()) return;
+        if (this.attackCooldown > 0) return;
+        this.setState('dash');
+        this.velocityX = dir * 12;
+        this.invincibleTime = 0.22;
+      }
+
+      jump() {
+        if (this.grounded && this.isInterruptible()) {
+          this.velocityY = 9.5;
+          this.grounded = false;
+          if (this.state === 'idle' || this.state === 'walk') this.setState('jump');
+        }
+      }
+
+      takeHit(attacker, dmg, knockback, launch, type) {
+        if (this.invincibleTime > 0 || this.dead) return false;
+        const facingAttacker = (attacker.x - this.x) * this.facing > 0;
+        if (this.state === 'block' && this.grounded && facingAttacker) {
+          const chip = dmg * 0.15;
+          this.hp = Math.max(0, this.hp - chip);
+          this.energy = Math.min(this.maxEnergy, this.energy + 5);
+          this.velocityX = attacker.facing * knockback * 0.25;
+          this.flashTime = 0.1;
+          createHitEffect(this.x + this.facing * -0.4, 1.4, 0, 0x88ccff, 6);
+          return false;
+        }
+        this.hp = Math.max(0, this.hp - dmg);
+        this.energy = Math.min(this.maxEnergy, this.energy + 15);
+        this.invincibleTime = 0.08;
+        this.velocityX = attacker.facing * knockback;
+        if (launch) this.velocityY = Math.max(this.velocityY, launch);
+        this.grounded = this.velocityY <= 0 && this.y <= 0.01;
+        if (!this.grounded || launch) this.setState('hurt');
+        else if (this.state !== 'ultra') this.setState('hurt');
+        this.flashTime = 0.18;
+        createHitEffect(this.x, 1.3 + Math.random() * 0.4, 0, type === 'ultra' ? 0xffaa20 : 0xff6040, type === 'ultra' ? 26 : 15);
+        camShake = Math.max(camShake, type === 'ultra' ? 0.6 : type === 'heavy' ? 0.35 : 0.2);
+        if (this.hp <= 0) { this.dead = true; this.setState('dead'); }
+        return true;
+      }
+
+      handleInput(inp) {
+        if (this.dead || inputLocked) { this.blockHeld = false; return; }
+        if (!this.isInterruptible()) { this.blockHeld = false; return; }
+
+        // 格挡
+        if (inp.block) {
+          this.blockHeld = true;
+          if (this.grounded && this.state !== 'block') { this.setState('block'); this.velocityX *= 0.5; }
+          return;
+        } else { this.blockHeld = false; if (this.state === 'block') this.setState('idle'); }
+
+        // 攻击
+        if (inp._jp.light && this.startAttack('light')) return;
+        if (inp._jp.heavy && this.startAttack('heavy')) return;
+        if (inp._jp.skill && this.startAttack('skill')) return;
+        if (inp._jp.ultra && this.startAttack('ultra')) return;
+        if (inp._jp.dash) { let d = 0; if (inp.left) d = -1; else if (inp.right) d = 1; else d = this.facing; this.doDash(d); return; }
+
+        // 移动
+        if (this.grounded) {
+          let mv = 0;
+          if (inp.left) mv -= 1;
+          if (inp.right) mv += 1;
+          if (inp.up && this.grounded) { this.jump(); }
+          if (mv !== 0) {
+            this.velocityX = mv * this.speed;
+            if (this.state !== 'walk' && this.grounded) this.setState('walk');
+          } else {
+            this.velocityX *= 0.6;
+            if (this.state === 'walk' && this.grounded) this.setState('idle');
+          }
+        } else {
+          // 空中微调
+          if (inp.left) this.velocityX = Math.max(this.velocityX - 20 * 0.016, -this.speed);
+          if (inp.right) this.velocityX = Math.min(this.velocityX + 20 * 0.016, this.speed);
+        }
+      }
+
+      update(dt, inp) {
+        if (inp) this.handleInput(inp);
+
+        this.stateTime += dt;
+        if (this.invincibleTime > 0) this.invincibleTime -= dt;
+        if (this.attackCooldown > 0) this.attackCooldown -= dt;
+        if (this.flashTime > 0) this.flashTime -= dt;
+
+        // 被动能量
+        this.energy = Math.min(this.maxEnergy, this.energy + 3 * dt);
+
+        // 状态结束
+        const dur = STATE_DUR[this.state];
+        if (dur && this.stateTime >= dur) {
+          if (this.state === 'hurt' || this.state === 'knockdown') {
+            if (this.dead) this.state = 'dead';
+            else this.setState('idle');
+          } else if (this.state === 'dash') {
+            this.setState('idle'); this.attackCooldown = 0.05;
+          } else {
+            // 攻击结束
+            this.attackCooldown = this.state === 'light' ? 0.12 : this.state === 'heavy' ? 0.25 : this.state === 'skill' ? 0.3 : 0.5;
+            this.setState('idle');
+            this.model.aura.visible = false;
+          }
+        }
+
+        // 重力
+        if (!this.grounded || this.velocityY > 0) {
+          this.velocityY -= 26 * dt;
+          this.y += this.velocityY * dt;
+          if (this.y <= 0) {
+            this.y = 0; this.velocityY = 0;
+            if (!this.grounded) {
+              this.grounded = true;
+              if (this.state === 'jump' || this.state === 'hurt') this.setState('idle');
+            }
+          }
+        }
+
+        // 水平移动
+        this.x += this.velocityX * dt;
+        if (this.state !== 'dash') this.velocityX *= (this.grounded ? 0.78 : 0.96);
+        this.x = clamp(this.x, -7.5, 7.5);
+        this.z = 0;
+
+        // 朝向
+        if (this.isInterruptible() && !this.dead) {
+          const op = this.opponent;
+          if (op) this.facing = op.x > this.x ? 1 : -1;
+        }
+
+        // hitbox (近战)
+        let active = false;
+        if (ACTIVE_WIN[this.state]) {
+          const prog = this.stateTime / STATE_DUR[this.state];
+          const [a, b] = ACTIVE_WIN[this.state];
+          if (prog >= a && prog <= b && !this.hitRegistered) active = true;
+        }
+        if (active) {
+          this.hitRegistered = this.tryMeleeHit();
+        }
+
+        // 技能发射
+        if (this.state === 'skill' && !this.skillFired) {
+          const prog = this.stateTime / STATE_DUR.skill;
+          if (prog >= 0.5) {
+            this.skillFired = true;
+            this.fireProjectile();
+          }
+        }
+
+        // 闪烁
+        if (this.flashTime > 0) {
+          this.applyTint(0xff9090);
+        } else if (this.invincibleTime > 0 && this.state !== 'ultra' && Math.floor(this.stateTime * 25) % 2) {
+          this.applyTint(0xdddddd);
+        } else {
+          this.applyNormal();
+        }
+        // 必杀光晕
+        if (this.model.aura.visible) {
+          this.model.glowMat.opacity = 0.3 + Math.sin(this.stateTime * 20) * 0.2;
+          this.model.aura.scale.setScalar(1 + Math.sin(this.stateTime * 14) * 0.1);
+        }
+
+        // 模型变换
+        this.model.group.position.set(this.x, this.y, this.z);
+        this.model.group.rotation.y = this.facing > 0 ? 0 : Math.PI;
+        const prog = STATE_DUR[this.state] ? clamp(this.stateTime / STATE_DUR[this.state], 0, 1) : 0;
+        const moving = (this.state === 'walk');
+        animateCharacter(this.model, this.state, this.stateTime * 1.0 + (this.side === 'p1' ? 0 : 100), prog, moving);
+      }
+
+      tryMeleeHit() {
+        const op = this.opponent;
+        if (!op || op.dead) return false;
+        const range = RANGES[this.state];
+        const dmg = this.state === 'light' ? this.attack : this.state === 'heavy' ? this.attack * 2.5 : 150;
+        const kb = this.state === 'light' ? 4 : this.state === 'heavy' ? 7 : 10;
+        const launch = this.state === 'light' ? 0 : this.state === 'heavy' ? 4 : 7;
+        const dx = op.x - this.x;
+        if (this.facing * dx < 0) return false; // 背对
+        if (Math.abs(dx) <= range && Math.abs(op.z - this.z) < 1.2) {
+          const hit = op.takeHit(this, dmg, kb, launch, this.state);
+          if (hit) {
+            this.energy = Math.min(this.maxEnergy, this.energy + 6);
+            registerCombo(this.side);
+            if (this.state === 'ultra') createShockwave(op.x, 0, 0xffaa20, 4);
+          }
+          return true;
+        }
+        return false;
+      }
+
+      fireProjectile() {
+        const geo = new THREE.SphereGeometry(0.28, 8, 6);
+        const col = this.side === 'p1' ? 0x40b0ff : 0xff5070;
+        const mat = new THREE.MeshBasicMaterial({ color: col });
+        const m = new THREE.Mesh(geo, mat);
+        m.position.set(this.x + this.facing * 0.6, 1.4, 0);
+        scene.add(m);
+        projectiles.push({
+          mesh: m, x: this.x + this.facing * 0.6, y: 1.4, z: 0,
+          vx: this.facing * 14, life: 1.2, damage: 55, knockback: 5, launch: 3,
+          owner: this, mat: mat, col: col
+        });
+      }
+    }
+
+    // ============================================================
+    //  连击 / 效果
+    // ============================================================
+    function registerCombo(side) {
+      if (comboTracker.timer > 0 && comboTracker.side === side) comboTracker.count++;
+      else { comboTracker.count = 1; comboTracker.side = side; }
+      comboTracker.timer = 1.2;
+      showCombo(comboTracker.count);
+    }
+
+    function createHitEffect(x, y, z, color, count) {
+      count = count || 15;
+      for (let i = 0; i < count; i++) {
+        const geo = new THREE.SphereGeometry(0.08 + Math.random() * 0.05, 4, 4);
+        const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 1 });
+        const p = new THREE.Mesh(geo, mat);
+        p.position.set(x, y, z);
+        scene.add(p);
+        particles.push({
+          mesh: p, mat: mat,
+          vx: (Math.random() - 0.5) * 9, vy: Math.random() * 7 + 1, vz: (Math.random() - 0.5) * 9,
+          life: 0.5 + Math.random() * 0.2, maxLife: 0.7
+        });
+      }
+    }
+
+    function createShockwave(x, z, color, scale) {
+      const geo = new THREE.RingGeometry(0.3, 0.5, 24);
+      const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+      const m = new THREE.Mesh(geo, mat);
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(x, 0.05, z);
+      scene.add(m);
+      shockwaves.push({ mesh: m, mat: mat, life: 0.6, maxLife: 0.6, scale: scale || 3 });
+    }
+
+    function triggerFlash() {
+      const f = $('flash');
+      f.classList.remove('fire'); void f.offsetWidth; f.classList.add('fire');
+    }
+
+    function updateEffects(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        p.mesh.position.x += p.vx * dt;
+        p.mesh.position.y += p.vy * dt;
+        p.mesh.position.z += p.vz * dt;
+        p.vy -= 14 * dt;
+        p.mat.opacity = Math.max(0, p.life / p.maxLife);
+        if (p.life <= 0) { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mat.dispose(); particles.splice(i, 1); }
+      }
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const s = shockwaves[i];
+        s.life -= dt;
+        const k = 1 - s.life / s.maxLife;
+        s.mesh.scale.setScalar(1 + k * s.scale);
+        s.mat.opacity = Math.max(0, s.life / s.maxLife * 0.9);
+        if (s.life <= 0) { scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mat.dispose(); shockwaves.splice(i, 1); }
+      }
+      // 投射物
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const pr = projectiles[i];
+        pr.life -= dt;
+        pr.x += pr.vx * dt;
+        pr.mesh.position.x = pr.x;
+        pr.mesh.position.y = 1.4 + Math.sin(pr.life * 12) * 0.1;
+        // 拖尾
+        const tg = new THREE.SphereGeometry(0.18, 5, 4);
+        const tm = new THREE.MeshBasicMaterial({ color: pr.col, transparent: true, opacity: 0.5 });
+        const tp = new THREE.Mesh(tg, tm);
+        tp.position.copy(pr.mesh.position);
+        scene.add(tp);
+        particles.push({ mesh: tp, mat: tm, vx: 0, vy: 0, vz: 0, life: 0.18, maxLife: 0.18 });
+        // 碰撞
+        const op = pr.owner.opponent;
+        if (op && !op.dead && Math.abs(op.x - pr.x) < 0.7 && op.invincibleTime <= 0) {
+          const hit = op.takeHit(pr.owner, pr.damage, pr.knockback, pr.launch, 'skill');
+          if (hit) { pr.owner.energy = Math.min(pr.owner.maxEnergy, pr.owner.energy + 6); registerCombo(pr.owner.side); createShockwave(pr.x, 0, pr.col, 2); pr.life = 0; }
+        }
+        if (pr.x < -8.5 || pr.x > 8.5) pr.life = 0;
+        if (pr.life <= 0) { scene.remove(pr.mesh); pr.mesh.geometry.dispose(); pr.mat.dispose(); projectiles.splice(i, 1); }
+      }
+    }
+
+    // ============================================================
+    //  相机
+    // ============================================================
+    function updateCamera(dt) {
+      const a = p1, b = p2;
+      const midX = (a.x + b.x) / 2;
+      const dist = Math.abs(a.x - b.x);
+      const camDist = Math.max(8, Math.min(15, dist * 0.8 + 5));
+      let tx = midX, ty = 3, tz = camDist;
+      if (camShake > 0) {
+        tx += (Math.random() - 0.5) * camShake;
+        ty += (Math.random() - 0.5) * camShake;
+        camShake = Math.max(0, camShake - dt * 2);
+      }
+      camera.position.x += (tx - camera.position.x) * 0.12;
+      camera.position.y += (ty - camera.position.y) * 0.12;
+      camera.position.z += (tz - camera.position.z) * 0.12;
+      camera.lookAt(midX, 1.5, 0);
+    }
+
+    // ============================================================
+    //  场景构建
+    // ============================================================
+    function clearScene() {
+      for (const o of sceneObjects) {
+        scene.remove(o);
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) { if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material.dispose(); }
+      }
+      sceneObjects = [];
+      // 清粒子等
+      [particles, shockwaves, projectiles].forEach(arr => {
+        arr.forEach(p => { scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mat.dispose(); });
+        arr.length = 0;
+      });
+    }
+
+    function buildScene(idx) {
+      clearScene();
+      const sc = SCENES[idx];
+      scene.background = new THREE.Color(sc.sky);
+      scene.fog = new THREE.Fog(sc.fog, 12, 40);
+
+      // 灯光
+      const amb = new THREE.AmbientLight(0xffffff, 0.5); scene.add(amb); sceneObjects.push(amb);
+      const dir = new THREE.DirectionalLight(sc.light, 1.1);
+      dir.position.set(5, 12, 6); scene.add(dir); sceneObjects.push(dir);
+      const fill = new THREE.DirectionalLight(0xffeedd, 0.3);
+      fill.position.set(-6, 5, -4); scene.add(fill); sceneObjects.push(fill);
+
+      // 地面
+      const groundMat = new THREE.MeshStandardMaterial({ color: sc.ground, roughness: 0.85, metalness: 0.1 });
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      scene.add(ground); sceneObjects.push(ground);
+
+      // 边界线
+      const lineMat = new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.4 });
+      for (const sx of [-8, 8]) {
+        const ln = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 14), lineMat);
+        ln.position.set(sx, 0.03, 0); scene.add(ln); sceneObjects.push(ln);
+      }
+
+      if (idx === 0) {
+        // 废弃都市：建筑
+        const bMat = new THREE.MeshStandardMaterial({ color: 0x2a2a32, roughness: 1 });
+        const bMat2 = new THREE.MeshStandardMaterial({ color: 0x1e1e26, roughness: 1 });
+        for (let i = 0; i < 16; i++) {
+          const h = 3 + Math.random() * 7;
+          const w = 1.5 + Math.random() * 2;
+          const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), Math.random() > 0.5 ? bMat : bMat2);
+          const side = i % 2 === 0 ? 1 : -1;
+          m.position.set(side * (10 + Math.random() * 10), h / 2, (Math.random() - 0.5) * 30);
+          scene.add(m); sceneObjects.push(m);
+        }
+        const moon = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12), new THREE.MeshBasicMaterial({ color: 0xddddff }));
+        moon.position.set(-10, 12, -20); scene.add(moon); sceneObjects.push(moon);
+      } else if (idx === 1) {
+        // 雨夜走廊：柱子
+        const colMat = new THREE.MeshStandardMaterial({ color: 0x3a4a60, roughness: 0.6, metalness: 0.3 });
+        for (let i = -3; i <= 3; i++) {
+          for (const side of [-1, 1]) {
+            const c = new THREE.Mesh(new THREE.BoxGeometry(0.8, 8, 0.8), colMat);
+            c.position.set(side * 6, 4, i * 5); scene.add(c); sceneObjects.push(c);
+          }
+        }
+        const pl1 = new THREE.PointLight(0x88bbff, 1.0, 14); pl1.position.set(0, 5, 0); scene.add(pl1); sceneObjects.push(pl1);
+        const pl2 = new THREE.PointLight(0x4466aa, 0.6, 12); pl2.position.set(0, 3, 8); scene.add(pl2); sceneObjects.push(pl2);
+        const ceil = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x101820 }));
+        ceil.rotation.x = Math.PI / 2; ceil.position.y = 8; scene.add(ceil); sceneObjects.push(ceil);
+      } else {
+        // 贵族大厅
+        const marble = new THREE.MeshStandardMaterial({ color: 0x5a4a5a, roughness: 0.3, metalness: 0.4 });
+        const orn = new THREE.MeshStandardMaterial({ color: 0xd4b060, roughness: 0.4, metalness: 0.6 });
+        for (let i = -3; i <= 3; i++) {
+          for (const side of [-1, 1]) {
+            const c = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 8, 12), marble);
+            c.position.set(side * 6, 4, i * 5); scene.add(c); sceneObjects.push(c);
+            const cap = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.2), orn);
+            cap.position.set(side * 6, 8, i * 5); scene.add(cap); sceneObjects.push(cap);
+          }
+        }
+        const chand = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), orn);
+        chand.position.set(0, 7, 0); scene.add(chand); sceneObjects.push(chand);
+        const cl = new THREE.PointLight(0xffcc88, 1.4, 18); cl.position.set(0, 7, 0); scene.add(cl); sceneObjects.push(cl);
+        const ceil = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshStandardMaterial({ color: 0x2a1c2e }));
+        ceil.rotation.x = Math.PI / 2; ceil.position.y = 8.2; scene.add(ceil); sceneObjects.push(ceil);
+      }
+    }
+
+    // ============================================================
+    //  AI
+    // ============================================================
+    function updateAI(dt) {
+      const me = p2, op = p1;
+      if (me.dead || op.dead || !roundActive || inputLocked) {
+        aiInput = blankInput(); return;
+      }
+      aiTimer -= dt;
+      const dist = Math.abs(me.x - op.x);
+      const facingOp = (op.x - me.x) * me.facing > 0;
+
+      // 重置即时按键
+      aiInput._jp = { light: false, heavy: false, skill: false, ultra: false, dash: false };
+      aiInput.left = false; aiInput.right = false; aiInput.up = false; aiInput.block = false;
+
+      // 决策
+      if (aiTimer <= 0) {
+        aiTimer = 0.2 + Math.random() * 0.25;
+        const lowHp = me.hp < me.maxHp * 0.3;
+        const r = Math.random();
+        if (me.energy >= 50 && dist < 3 && r < 0.5) aiAction = 'ultra';
+        else if (me.energy >= 15 && dist > 4 && dist < 8 && r < 0.6) aiAction = 'skill';
+        else if (dist > 2.2) aiAction = 'approach';
+        else if (dist < 1.2 && r < 0.3 && lowHp) aiAction = 'block';
+        else if (dist < 1.6) aiAction = r < 0.45 ? 'light' : (r < 0.8 ? 'heavy' : 'dash');
+        else aiAction = 'approach';
+        aiActionTimer = 0;
+      }
+      aiActionTimer += dt;
+
+      if (!me.isInterruptible()) { /* 进行中不输入 */ }
+      else {
+        switch (aiAction) {
+          case 'approach':
+            if (op.x < me.x) aiInput.left = true; else aiInput.right = true;
+            if (dist < 1.8 && aiActionTimer > 0.15) aiInput._jp.light = true;
+            break;
+          case 'light': aiInput._jp.light = true; aiAction = 'wait'; break;
+          case 'heavy': aiInput._jp.heavy = true; aiAction = 'wait'; break;
+          case 'skill': aiInput._jp.skill = true; aiAction = 'wait'; break;
+          case 'ultra': aiInput._jp.ultra = true; aiAction = 'wait'; break;
+          case 'block': aiInput.block = true; if (aiActionTimer > 0.5) aiAction = 'approach'; break;
+          case 'dash': aiInput._jp.dash = true; aiAction = 'wait'; break;
+          case 'wait': if (aiActionTimer > 0.4) aiAction = 'approach'; break;
+        }
+        // 偶尔跳
+        if (Math.random() < 0.005) aiInput.up = true;
+      }
+    }
+    let aiInput = blankInput();
+    function blankInput() { return { left: false, right: false, up: false, down: false, block: false, _jp: { light: false, heavy: false, skill: false, ultra: false, dash: false } }; }
+
+    // ============================================================
+    //  输入
+    // ============================================================
+    const InputManager = {
+      playerKeys: {
+        p1: { up: false, down: false, left: false, right: false, light: false, heavy: false, skill: false, block: false, dash: false, ultra: false },
+        p2: { up: false, down: false, left: false, right: false, light: false, heavy: false, skill: false, block: false, dash: false, ultra: false }
+      },
+      justPressed: { p1: {}, p2: {} },
+      setKey(player, action, val) {
+        if (val && !this.playerKeys[player][action]) this.justPressed[player][action] = true;
+        this.playerKeys[player][action] = val;
+      },
+      wasJustPressed(player, action) { return !!this.justPressed[player][action]; },
+      clearJustPressed() { this.justPressed = { p1: {}, p2: {} }; }
+    };
+
+    const KEYMAP = {
+      p1: { 'w': 'up', 's': 'down', 'a': 'left', 'd': 'right', 'j': 'light', 'k': 'heavy', 'u': 'skill', 'i': 'ultra', ' ': 'block', 'l': 'dash' },
+      p2: { 'arrowup': 'up', 'arrowdown': 'down', 'arrowleft': 'left', 'arrowright': 'right', '1': 'light', '2': 'heavy', '3': 'skill', '4': 'ultra', '0': 'block', '5': 'dash' }
+    };
+
+    function initInput() {
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+          if (gameState === 'battle') togglePause();
+          return;
+        }
+        const k = e.key.toLowerCase();
+        for (const player of ['p1', 'p2']) {
+          if (player === 'p2' && cpuMode) continue;
+          if (KEYMAP[player][k] !== undefined) {
+            e.preventDefault();
+            InputManager.setKey(player, KEYMAP[player][k], true);
+          }
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        const k = e.key.toLowerCase();
+        for (const player of ['p1', 'p2']) {
+          if (player === 'p2' && cpuMode) continue;
+          if (KEYMAP[player][k] !== undefined) {
+            InputManager.setKey(player, KEYMAP[player][k], false);
+          }
+        }
+      });
+
+      // 触摸按钮
+      document.querySelectorAll('[data-player]').forEach(btn => {
+        const player = btn.dataset.player;
+        const key = btn.dataset.key;
+        const press = (e) => { e.preventDefault(); btn.classList.add('held'); InputManager.setKey(player, key, true); };
+        const release = (e) => { e.preventDefault(); btn.classList.remove('held'); InputManager.setKey(player, key, false); };
+        btn.addEventListener('touchstart', press, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+      });
+    }
+
+    function gatherInput(player) {
+      const k = InputManager.playerKeys[player];
+      return {
+        left: k.left, right: k.right, up: k.up, down: k.down, block: k.block,
+        _jp: {
+          light: InputManager.wasJustPressed(player, 'light'),
+          heavy: InputManager.wasJustPressed(player, 'heavy'),
+          skill: InputManager.wasJustPressed(player, 'skill'),
+          ultra: InputManager.wasJustPressed(player, 'ultra'),
+          dash: InputManager.wasJustPressed(player, 'dash')
+        }
+      };
+    }
+
+    // ============================================================
+    //  UI / 屏幕切换
+    // ============================================================
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      $(id).classList.add('active');
+    }
+
+    function buildCharGrid() {
+      const grid = $('char-grid');
+      grid.innerHTML = '';
+      CHARACTERS.forEach((c, i) => {
+        const card = document.createElement('div');
+        card.className = 'char-card';
+        card.dataset.idx = i;
+        card.innerHTML = '<div class="cname">' + c.name + '</div>' +
+          '<div class="ctitle">' + c.title + '</div>' +
+          '<div class="ctype">' + TYPE_NAME[c.type] + ' · HP' + c.hp + '</div>';
+        card.addEventListener('click', () => selectChar(i));
+        grid.appendChild(card);
+      });
+    }
+
+    function selectChar(idx) {
+      if (selectStage === 'p1') selectCardP1 = idx;
+      else selectCardP2 = idx;
+      refreshSelectUI();
+      setPreviewChar(idx);
+    }
+
+    function refreshSelectUI() {
+      document.querySelectorAll('.char-card').forEach((card, i) => {
+        card.classList.remove('sel', 'locked');
+        if (selectStage === 'p1' && i === selectCardP1) card.classList.add('sel');
+        if (selectStage === 'p2' && i === selectCardP2) card.classList.add('locked');
+      });
+      const cur = selectStage === 'p1' ? selectCardP1 : selectCardP2;
+      const c = CHARACTERS[cur];
+      $('select-info').textContent = (selectStage === 'p1' ? 'P1' : (cpuMode ? 'CPU' : 'P2')) + '：' +
+        c.name + ' — ' + c.title + ' (' + TYPE_NAME[c.type] + ')  攻击' + c.attack + '  速度' + c.speed;
+      $('select-title').textContent = '选择角色 — ' + (selectStage === 'p1' ? 'P1' : (cpuMode ? 'CPU' : 'P2'));
+    }
+
+    function buildSceneGrid() {
+      const grid = $('scene-grid');
+      grid.innerHTML = '';
+      SCENES.forEach((s, i) => {
+        const card = document.createElement('div');
+        card.className = 'scene-card' + (i === selScene ? ' sel' : '');
+        card.dataset.idx = i;
+        card.innerHTML = '<div style="height:50px;background:linear-gradient(160deg,#' + s.sky.toString(16) + ',#000);border-radius:6px;"></div>' +
+          '<div class="scene-name">' + s.name + '</div>';
+        card.addEventListener('click', () => {
+          selScene = i;
+          document.querySelectorAll('.scene-card').forEach(c => c.classList.remove('sel'));
+          card.classList.add('sel');
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    function setPreviewChar(idx) {
+      if (!webglOK || !previewScene) return;
+      if (previewChar) { previewScene.remove(previewChar.group); }
+      previewChar = buildCharacter(CHARACTERS[idx]);
+      previewChar.torso.userData.bx = 0; previewChar.torso.userData.by = 1.35;
+      previewChar.group.position.set(0, 0, 0);
+      previewScene.add(previewChar.group);
+    }
+
+    function showCombo(n) {
+      $('combo-num').textContent = n;
+      const d = $('combo-display');
+      d.classList.add('show');
+      clearTimeout(showCombo._t);
+      showCombo._t = setTimeout(() => d.classList.remove('show'), 900);
+    }
+
+    function announce(text) {
+      const a = $('announce');
+      a.textContent = text;
+      a.classList.remove('show'); void a.offsetWidth; a.classList.add('show');
+    }
+
+    function updateHUD() {
+      $('p1-name').textContent = p1.charData.name + (cpuMode ? '' : ' [P1]');
+      $('p2-name').textContent = p2.charData.name + (cpuMode ? ' [CPU]' : ' [P2]');
+      $('p1-hp').style.width = (p1.hp / p1.maxHp * 100) + '%';
+      $('p2-hp').style.width = (p2.hp / p2.maxHp * 100) + '%';
+      $('p1-en').style.width = (p1.energy / p1.maxEnergy * 100) + '%';
+      $('p2-en').style.width = (p2.energy / p2.maxEnergy * 100) + '%';
+      $('p1-en').classList.toggle('full', p1.energy >= p1.maxEnergy);
+      $('p2-en').classList.toggle('full', p2.energy >= p2.maxEnergy);
+      $('timer').textContent = Math.ceil(Math.max(0, roundTime));
+      $('round-label').textContent = '第 ' + roundNum + ' 回合';
+      updatePips('p1-pips', roundWins.p1);
+      updatePips('p2-pips', roundWins.p2);
+    }
+    function updatePips(id, wins) {
+      const el = $(id);
+      el.innerHTML = '';
+      for (let i = 0; i < 2; i++) {
+        const p = document.createElement('span');
+        p.className = 'pip' + (i < wins ? ' win' : '');
+        el.appendChild(p);
+      }
+    }
+
+    // ============================================================
+    //  回合流程
+    // ============================================================
+    function startMatch() {
+      roundWins = { p1: 0, p2: 0 };
+      roundNum = 1;
+      buildScene(selScene);
+      startRound();
+    }
+
+    function startRound() {
+      p1.resetForRound(); p2.resetForRound();
+      roundTime = 60;
+      roundPhase = 'intro'; phaseTimer = 0;
+      roundActive = false; inputLocked = true;
+      comboTracker = { count: 0, timer: 0, side: '' };
+      announce('ROUND ' + roundNum);
+    }
+
+    function endRound(reason) {
+      if (roundPhase === 'end') return;
+      roundPhase = 'end'; phaseTimer = 0; roundActive = false; inputLocked = true;
+      let winner = null;
+      if (p1.dead && !p2.dead) winner = 'p2';
+      else if (p2.dead && !p1.dead) winner = 'p1';
+      else if (p1.dead && p2.dead) winner = 'draw';
+      else { // 时间到
+        if (p1.hp > p2.hp) winner = 'p1';
+        else if (p2.hp > p1.hp) winner = 'p2';
+        else winner = 'draw';
+      }
+      if (winner === 'p1') roundWins.p1++;
+      else if (winner === 'p2') roundWins.p2++;
+      announce(reason === 'time' ? 'TIME UP' : 'K.O.');
+    }
+
+    function nextRoundOrMatch() {
+      if (roundWins.p1 >= 2 || roundWins.p2 >= 2) {
+        endMatch();
+      } else {
+        roundNum++;
+        startRound();
+      }
+    }
+
+    function endMatch() {
+      const winnerSide = roundWins.p1 >= 2 ? 'p1' : 'p2';
+      const winner = winnerSide === 'p1' ? p1 : p2;
+      const loser = winnerSide === 'p1' ? p2 : p1;
+      $('result-title').textContent = (winnerSide === 'p1' ? 'P1' : (cpuMode ? 'CPU' : 'P2')) + ' 胜利！';
+      $('result-detail').textContent = winner.charData.name + ' 击败 ' + loser.charData.name + '   比分 ' + roundWins.p1 + ' - ' + roundWins.p2;
+      gameState = 'result';
+      showScreen('result-screen');
+    }
+
+    function togglePause() {
+      if (gameState !== 'battle' && gameState !== 'pause') return;
+      if (gameState === 'battle') {
+        gameState = 'pause'; paused = true;
+        showScreen('pause-screen');
+      } else {
+        gameState = 'battle'; paused = false;
+        InputManager.clearJustPressed();
+        showScreen('battle-ui');
+      }
+    }
+
+    // ============================================================
+    //  主循环
+    // ============================================================
+    function updateBattle(dt) {
+      // 回合阶段
+      if (roundPhase === 'intro') {
+        phaseTimer += dt;
+        if (phaseTimer >= 1.3) { announce('FIGHT!'); phaseTimer = 0; roundPhase = 'fight'; }
+      } else if (roundPhase === 'fight') {
+        phaseTimer += dt;
+        if (phaseTimer >= 0.8) { roundPhase = 'active'; roundActive = true; inputLocked = false; }
+      } else if (roundPhase === 'active') {
+        roundTime -= dt;
+        if (roundTime <= 0) { endRound('time'); }
+        else if (p1.dead || p2.dead) { endRound('ko'); }
+      } else if (roundPhase === 'end') {
+        phaseTimer += dt;
+        if (phaseTimer >= 2.0) nextRoundOrMatch();
+      }
+
+      // 连击计时
+      if (comboTracker.timer > 0) { comboTracker.timer -= dt; if (comboTracker.timer <= 0) comboTracker.count = 0; }
+
+      // AI
+      if (cpuMode) {
+        updateAI(dt);
+        p2.update(dt, aiInput);
+      } else {
+        p2.update(dt, gatherInput('p2'));
+      }
+      p1.update(dt, gatherInput('p1'));
+
+      updateEffects(dt);
+      updateCamera(dt);
+      updateHUD();
+      InputManager.clearJustPressed();
+    }
+
+    function updatePreview(dt) {
+      if (previewChar) {
+        previewChar.group.rotation.y += dt * 0.8;
+        animateCharacter(previewChar, 'idle', performance.now() / 1000, 0, false);
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (!webglOK || !renderer) return;
+      const dt = Math.min(clock.getDelta(), 0.05);
+      if (gameState === 'battle' && !paused) {
+        updateBattle(dt);
+        renderer.render(scene, camera);
+      } else if (gameState === 'pause') {
+        renderer.render(scene, camera);
+      } else if (gameState === 'select' || gameState === 'scene') {
+        updatePreview(dt);
+        if (previewRenderer) previewRenderer.render(previewScene, previewCamera);
+      }
+    }
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    function initThree() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 3, 10);
+
+      renderer = new THREE.WebGLRenderer({ canvas: $('game-canvas'), antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // 预览
+      previewScene = new THREE.Scene();
+      previewCamera = new THREE.PerspectiveCamera(45, 160 / 200, 0.1, 50);
+      previewCamera.position.set(0, 1.6, 4.2);
+      previewCamera.lookAt(0, 1.2, 0);
+      previewScene.add(new THREE.AmbientLight(0xffffff, 0.7));
+      const d = new THREE.DirectionalLight(0xffffff, 1.0); d.position.set(2, 4, 3); previewScene.add(d);
+      const pg = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x14060c }));
+      pg.rotation.x = -Math.PI / 2; pg.position.y = 0; previewScene.add(pg);
+
+      previewRenderer = new THREE.WebGLRenderer({ canvas: $('preview-canvas'), antialias: true });
+      previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      previewRenderer.setSize(160, 200);
+
+      clock = new THREE.Clock();
+      window.addEventListener('resize', onResize);
+    }
+
+    function onResize() {
+      if (!webglOK || !camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function bindMenu() {
+      document.querySelectorAll('#menu-screen .menu-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const act = btn.dataset.act;
+          if (act === 'about') {
+            $('about-text').innerHTML = '绯红对弈3D — 火影究极风暴风格3D格斗。<br>6名角色 / 3个场景 / 3局2胜。<br>手机端触摸操控，桌面端键盘双人对战。<br>必杀技需满能量(黄条)释放。';
+          } else if (act === 'vs-cpu') {
+            cpuMode = true; enterSelect();
+          } else if (act === 'vs-2p') {
+            cpuMode = false; enterSelect();
+          }
+        });
+      });
+
+      $('back-btn').addEventListener('click', () => {
+        if (selectStage === 'p2') { selectStage = 'p1'; refreshSelectUI(); setPreviewChar(selectCardP1); }
+        else { gameState = 'menu'; showScreen('menu-screen'); }
+      });
+      $('next-btn').addEventListener('click', () => {
+        if (selectStage === 'p1') {
+          selP1 = selectCardP1;
+          if (cpuMode) {
+            // CPU 随机选角
+            selectCardP2 = Math.floor(Math.random() * CHARACTERS.length);
+            selP2 = selectCardP2;
+            enterSceneSelect();
+          } else {
+            selectStage = 'p2'; refreshSelectUI(); setPreviewChar(selectCardP2);
+          }
+        } else {
+          selP2 = selectCardP2;
+          enterSceneSelect();
+        }
+      });
+
+      $('scene-back').addEventListener('click', () => { enterSelect(); });
+      $('scene-start').addEventListener('click', () => { startBattle(); });
+
+      // 暂停 / 结果按钮
+      document.querySelectorAll('#pause-screen .menu-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const act = btn.dataset.act;
+          if (act === 'resume') togglePause();
+          else if (act === 'restart') { gameState = 'battle'; paused = false; showScreen('battle-ui'); startMatch(); }
+          else if (act === 'quit') { gameState = 'menu'; showScreen('menu-screen'); }
+        });
+      });
+      document.querySelectorAll('#result-screen .menu-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const act = btn.dataset.act;
+          if (act === 'rematch') { gameState = 'battle'; showScreen('battle-ui'); startMatch(); }
+          else if (act === 'quit') { gameState = 'menu'; showScreen('menu-screen'); }
+        });
+      });
+    }
+
+    function enterSelect() {
+      gameState = 'select';
+      selectStage = 'p1';
+      selectCardP1 = selP1 || 0;
+      if (!cpuMode) selectCardP2 = selP2 || 1;
+      buildCharGrid();
+      refreshSelectUI();
+      setPreviewChar(selectCardP1);
+      showScreen('select-screen');
+    }
+
+    function enterSceneSelect() {
+      gameState = 'scene';
+      buildSceneGrid();
+      showScreen('scene-screen');
+    }
+
+    function startBattle() {
+      if (!webglOK) { alert('WebGL不可用，无法开始3D战斗。请在支持WebGL的浏览器中打开。'); return; }
+      // 创建Fighter
+      if (p1) scene.remove(p1.model.group);
+      if (p2) scene.remove(p2.model.group);
+      p1 = new Fighter(CHARACTERS[selP1], 'p1');
+      p2 = new Fighter(CHARACTERS[selP2], 'p2');
+
+      scene.add(p1.model.group);
+      scene.add(p2.model.group);
+
+      $('touch-p2').style.display = cpuMode ? 'none' : 'block';
+      $('hint').textContent = cpuMode
+        ? 'P1: WASD移动 J轻 K重 U技 I必 空格防 L闪 | ESC暂停'
+        : 'P1: WASD J K U I 空格 L  |  P2: 方向键 1 2 3 4 0 5  | ESC暂停';
+
+      gameState = 'battle'; paused = false;
+      showScreen('battle-ui');
+      startMatch();
+    }
+
+    // ============================================================
+    //  启动
+    // ============================================================
+    function boot() {
+      if (typeof THREE === 'undefined') {
+        setTimeout(boot, 100); return;
+      }
+      // UI初始化不依赖WebGL，先执行
+      initInput();
+      bindMenu();
+      buildCharGrid();
+      setPreviewChar(0);
+      // WebGL初始化可能失败（沙箱环境），不影响UI
+      try { initThree(); webglOK = true; }
+      catch(e) { console.warn('WebGL init failed, 3D disabled:', e.message); webglOK = false; }
+      animate();
+    }
+
+    let booted = false;
+    function safeBoot() {
+      if (booted) return;
+      if (typeof THREE === 'undefined') { setTimeout(safeBoot, 100); return; }
+      booted = true;
+      boot();
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', safeBoot);
+    } else {
+      safeBoot();
+    }
+    window.addEventListener('load', safeBoot);
+  })();
+  </script>
+</body>
+</html>
