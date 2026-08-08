@@ -2447,38 +2447,38 @@ const SpriteFactory = {
     getCharacterStats: function(type) {
         const stats = {
             0: { name: '凉音', subtitle: '水手服冷感少女', type: '近身快攻型',
-                 hp: 1000, speed: 5.2, attack: 85, defense: 1.0, 
-                 jumpPower: 15, heavyCost: 15, skillCost: 30, ultraCost: 100,
+                 hp: 280, speed: 5.2, attack: 30, defense: 1.0,
+                 jumpPower: 15, heavyCost: 8, skillCost: 15, ultraCost: 50,
                  move: 'close', weapon: 'fist',
                  winQuote: '太弱了，无趣。',
                  loseQuote: '...下次，不会输。' },
             1: { name: '灰夜', subtitle: '孤寂型少年感角色', type: '游击拉扯型',
-                 hp: 850, speed: 5.8, attack: 70, defense: 0.9,
-                 jumpPower: 16, heavyCost: 12, skillCost: 25, ultraCost: 100,
+                 hp: 220, speed: 5.8, attack: 35, defense: 1.0,
+                 jumpPower: 16, heavyCost: 8, skillCost: 15, ultraCost: 50,
                  move: 'skirmish', weapon: 'fist',
                  winQuote: '我...赢了？',
                  loseQuote: '果然，还是不行啊...' },
             2: { name: '璃月', subtitle: '贵族长发少女', type: '法术远程型',
-                 hp: 750, speed: 4.2, attack: 95, defense: 0.85,
-                 jumpPower: 14, heavyCost: 20, skillCost: 35, ultraCost: 100,
+                 hp: 200, speed: 4.2, attack: 38, defense: 1.0,
+                 jumpPower: 14, heavyCost: 8, skillCost: 15, ultraCost: 50,
                  move: 'ranged', weapon: 'mirror',
                  winQuote: '低下你那傲慢的头颅吧。',
                  loseQuote: '呵...这就是你的力量吗？' },
             3: { name: '刹那', subtitle: '灰调短发冷酷少女', type: '擒拿手刀型',
-                 hp: 950, speed: 5.5, attack: 80, defense: 1.05,
-                 jumpPower: 15, heavyCost: 14, skillCost: 28, ultraCost: 100,
+                 hp: 260, speed: 5.5, attack: 32, defense: 1.0,
+                 jumpPower: 15, heavyCost: 8, skillCost: 15, ultraCost: 50,
                  move: 'grapple', weapon: 'hand',
                  winQuote: '手刀，落。',
                  loseQuote: '不够...还不够快...' },
             4: { name: '绯刃', subtitle: '眼罩战斗少女', type: '刺客爆发型',
-                 hp: 800, speed: 6.0, attack: 100, defense: 0.85,
-                 jumpPower: 17, heavyCost: 18, skillCost: 32, ultraCost: 100,
+                 hp: 210, speed: 6.0, attack: 40, defense: 1.0,
+                 jumpPower: 17, heavyCost: 8, skillCost: 15, ultraCost: 50,
                  move: 'assassin', weapon: 'dagger',
                  winQuote: '...任务完成。',
                  loseQuote: '可恶...竟然...' },
             5: { name: '猫音', subtitle: '猫耳甜系校服少女', type: '灵巧连击型',
-                 hp: 900, speed: 5.6, attack: 75, defense: 1.0,
-                 jumpPower: 16, heavyCost: 14, skillCost: 28, ultraCost: 100,
+                 hp: 250, speed: 5.6, attack: 28, defense: 1.0,
+                 jumpPower: 16, heavyCost: 8, skillCost: 15, ultraCost: 50,
                  move: 'combo', weapon: 'paw',
                  winQuote: '喵～赢啦！',
                  loseQuote: '呜...下次再来～' }
@@ -4091,11 +4091,11 @@ class Fighter {
 
         // 攻击指令
         if (this.attackCooldown <= 0) {
-            if (wasPressed('skill') && this.energy >= 30) {
+            if (wasPressed('skill') && this.energy >= 15) {
                 this._startSkill();
                 return;
             }
-            if (wasPressed('heavy') && this.energy >= 15) {
+            if (wasPressed('heavy') && this.energy >= 8) {
                 this._startAttack(true);
                 return;
             }
@@ -4251,7 +4251,7 @@ class Fighter {
         this.frame = Math.floor(this.stateTime * this.animSpeed);
         
         const isHeavy = this.state === 'heavy';
-        const totalFrames = isHeavy ? 12 : 8;
+        const totalFrames = isHeavy ? 6 : 4;
         const hitFrame = isHeavy ? 5 : 3;
         
         if (this.frame === hitFrame) {
@@ -4290,13 +4290,13 @@ class Fighter {
             AudioManager.playSFX('hit_skill');
             EffectManager.createSkillEffect(this.x + this.facing * 60, this.y - 50, type, this.facing);
             
-            const baseDamage = 150;
+            const baseDamage = 60;
             let damage = baseDamage;
             let knockback = 8;
             
             switch(type) {
                 case 'bullet':
-                    damage = 120;
+                    damage = 50;
                     // 创建弹幕投射物
                     for (let i = -2; i <= 2; i++) {
                         this.currentSkillProjectiles.push({
@@ -4313,7 +4313,7 @@ class Fighter {
                     }
                     break;
                 case 'dagger_throw':
-                    damage = 180;
+                    damage = 70;
                     for (let i = 0; i < 3; i++) {
                         setTimeout(() => {
                             if (this.state !== 'hurt') {
@@ -4333,7 +4333,7 @@ class Fighter {
                     }
                     break;
                 case 'wave':
-                    damage = 160;
+                    damage = 65;
                     this.hitbox = {
                         x: this.x + this.facing * 40,
                         y: this.y - 80,
@@ -4347,7 +4347,7 @@ class Fighter {
                     this.hitboxLifetime = 0.3;
                     break;
                 case 'grapple':
-                    damage = 200;
+                    damage = 80;
                     this.hitbox = {
                         x: this.x + this.facing * 20,
                         y: this.y - 80,
@@ -4361,7 +4361,7 @@ class Fighter {
                     this.hitboxLifetime = 0.4;
                     break;
                 case 'paw_flurry':
-                    damage = 100;
+                    damage = 40;
                     this.hitbox = {
                         x: this.x + this.facing * 30,
                         y: this.y - 80,
@@ -4417,7 +4417,7 @@ class Fighter {
                     w: 250,
                     h: 200,
                     active: true,
-                    damage: 500,
+                    damage: 150,
                     knockback: 25,
                     type: 'ultra'
                 };
@@ -4451,7 +4451,7 @@ class Fighter {
 
     _activateHitbox(type, isHeavy) {
         const reach = isHeavy ? 70 : 50;
-        const damage = isHeavy ? this.stats.attack * 1.8 : this.stats.attack * 1.0;
+        const damage = isHeavy ? this.stats.attack * 2.5 : this.stats.attack * 1.0;
         const knockback = isHeavy ? 12 : 6;
         
         this.hitbox = {
@@ -4464,18 +4464,23 @@ class Fighter {
             knockback: knockback,
             type: type
         };
-        this.hitboxLifetime = 0.08;
+        this.hitboxLifetime = 0.15;
     }
 
     _updateHurt(dt) {
         this.stateTime += dt;
         this.frame = Math.floor(this.stateTime * 15);
-        this.velocityX *= 0.9;
-        this._applyPhysics(dt, 2000);
-        
-        if (this.frame >= 10) {
-            this.state = 'idle';
-            this.stateTime = 0;
+        this.velocityX *= 0.92;
+        this._applyPhysics(dt, 1800); // 降低重力让浮空更久
+
+        // 浮空时不在地面才保持hurt状态
+        if (this.y >= this.groundY) {
+            this.y = this.groundY;
+            this.velocityY = 0;
+            if (this.stateTime > 0.3) {
+                this.state = 'idle';
+                this.stateTime = 0;
+            }
         }
     }
 
@@ -4548,11 +4553,11 @@ class Fighter {
         this.state = 'hurt';
         this.stateTime = 0;
         this.velocityX = -attackerFacing * knockback;
-        this.velocityY = -3;
+        this.velocityY = -8; // 更高的浮空
         this.isBlocking = false;
-        this.invincibleTime = 0.3;
+        this.invincibleTime = 0.08;
         this.hitstop = 0.05;
-        this.hurtboxActive = false;
+        this.hurtboxActive = true;
     }
 
     _doDeath() {
@@ -4877,7 +4882,7 @@ class Game {
         // AI 决策周期
         this._aiTimer = (this._aiTimer || 0) - dt;
         if (this._aiTimer <= 0) {
-            this._aiTimer = 0.3 + Math.random() * 0.4;
+            this._aiTimer = 0.2 + Math.random() * 0.2;
             this._aiAction = this._decideAIAction(dist, ai, target);
         }
 
@@ -4910,7 +4915,7 @@ class Game {
                     }
                     break;
                 case 'attack_heavy':
-                    if (dist < 130 && ai.energy >= 15) {
+                    if (dist < 130 && ai.energy >= 8) {
                         if (!this._aiAttacked) {
                             InputManager.justPressed.p2.heavy = true;
                             this._aiAttacked = true;
@@ -4921,7 +4926,7 @@ class Game {
                     }
                     break;
                 case 'use_skill':
-                    if (ai.energy >= 30) {
+                    if (ai.energy >= 15) {
                         if (!this._aiAttacked) {
                             InputManager.justPressed.p2.skill = true;
                             this._aiAttacked = true;
@@ -4944,7 +4949,7 @@ class Game {
                     }
                     break;
                 case 'ultra':
-                    if (ai.energy >= 100) {
+                    if (ai.energy >= 50) {
                         if (!this._aiAttacked) {
                             InputManager.justPressed.p2.ultra = true;
                             this._aiAttacked = true;
@@ -4970,7 +4975,7 @@ class Game {
         // 血量低时更倾向防御或后退
         const hpRatio = ai.hp / ai.maxHp;
 
-        if (ai.energy >= 100 && dist < 300 && Math.random() < 0.7) return 'ultra';
+        if (ai.energy >= 50 && dist < 300 && Math.random() < 0.7) return 'ultra';
 
         if (hpRatio < 0.3) {
             if (Math.random() < 0.3) return 'block';
@@ -4980,18 +4985,18 @@ class Game {
         if (dist < 80) {
             const r = Math.random();
             if (r < 0.3) return 'attack_light';
-            if (r < 0.5 && ai.energy >= 15) return 'attack_heavy';
+            if (r < 0.5 && ai.energy >= 8) return 'attack_heavy';
             if (r < 0.6) return 'block';
             if (r < 0.7) return 'jump';
             if (r < 0.8) return 'dash';
             return 'attack_light';
         } else if (dist < 200) {
-            if (ai.energy >= 30 && Math.random() < 0.4) return 'use_skill';
+            if (ai.energy >= 15 && Math.random() < 0.4) return 'use_skill';
             if (Math.random() < 0.6) return 'approach';
             if (Math.random() < 0.5) return 'attack_light';
             return 'approach';
         } else {
-            if (ai.energy >= 30 && Math.random() < 0.3) return 'use_skill';
+            if (ai.energy >= 15 && Math.random() < 0.3) return 'use_skill';
             return 'approach';
         }
     }
@@ -5009,7 +5014,7 @@ class Game {
 
         // 必杀技检测（专属必杀按键）
         if (this.selectedP1 !== undefined && this.p1 && !this.p1.dead) {
-            if (this.p1.energy >= 100 &&
+            if (this.p1.energy >= 50 &&
                 InputManager.wasJustPressed('p1', 'ultra') &&
                 this.p1.canAct()) {
                 if (this.p1._startUltra()) {
@@ -5019,7 +5024,7 @@ class Game {
             }
         }
         if (this.p2 && !this.p2.dead) {
-            if (this.p2.energy >= 100 &&
+            if (this.p2.energy >= 50 &&
                 InputManager.wasJustPressed('p2', 'ultra') &&
                 this.p2.canAct()) {
                 if (this.p2._startUltra()) {
@@ -5230,6 +5235,26 @@ class Game {
         // 回合
         document.getElementById('round-indicator').textContent = 
             `第 ${this.round} 回合 · ${this.wins.p1}:${this.wins.p2}`;
+
+        // 更新连击数显示
+        const p1Combo = this.p1.comboCount;
+        const p2Combo = this.p2.comboCount;
+        let comboEl = document.getElementById('combo-display');
+        if (!comboEl) {
+            comboEl = document.createElement('div');
+            comboEl.id = 'combo-display';
+            comboEl.style.cssText = 'position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:30;font-size:24px;font-weight:900;color:#ffee00;text-shadow:0 0 10px #ff6600;pointer-events:none;';
+            document.getElementById('battle-screen').appendChild(comboEl);
+        }
+        if (p1Combo > 1) {
+            comboEl.textContent = p1Combo + ' HIT!';
+            comboEl.style.display = 'block';
+        } else if (p2Combo > 1) {
+            comboEl.textContent = p2Combo + ' HIT!';
+            comboEl.style.display = 'block';
+        } else {
+            comboEl.style.display = 'none';
+        }
     }
 
     render() {
