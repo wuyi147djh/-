@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0b0f14" />
+<title>SNOWBOUND — 雪原站场</title>
+<link rel="stylesheet" href="./css/style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud" class="hidden">
+    <div id="vignette"></div>
+
+    <!-- crosshair -->
+    <div id="crosshair">
+      <span class="ch ch-t"></span><span class="ch ch-b"></span>
+      <span class="ch ch-l"></span><span class="ch ch-r"></span>
+      <span id="ch-dot"></span>
+      <span id="hitmarker"></span>
+    </div>
+
+    <!-- top bar -->
+    <div id="topbar">
+      <div id="objective">
+        <div class="obj-label">当前波次</div>
+        <div class="obj-value"><span id="wave-num">1</span></div>
+        <div class="obj-sub">剩余敌人 <b id="enemy-count">0</b></div>
+      </div>
+      <div id="stats">
+        <div><span class="k">击杀</span><b id="kill-count">0</b></div>
+        <div><span class="k">分数</span><b id="score">0</b></div>
+        <div><span class="k">FPS</span><b id="fps">0</b></div>
+      </div>
+      <button id="btn-pause" class="icon-btn" aria-label="暂停">II</button>
+    </div>
+
+    <div id="killfeed"></div>
+    <div id="wave-banner" class="hidden"></div>
+
+    <!-- bottom-left : health -->
+    <div id="health-panel">
+      <div class="hp-row"><span class="hp-icon">✚</span><span id="health-num">100</span></div>
+      <div id="health-bar"><div id="health-fill"></div></div>
+      <div id="armor-row"><span class="k">护甲</span><div id="armor-bar"><div id="armor-fill"></div></div></div>
+    </div>
+
+    <!-- bottom-right : weapon -->
+    <div id="weapon-panel">
+      <div id="weapon-name">MP7</div>
+      <div id="ammo"><span id="ammo-mag">30</span><span class="slash">/</span><span id="ammo-reserve">120</span></div>
+      <div id="reload-hint" class="hidden">换弹中…<div id="reload-bar"><div id="reload-fill"></div></div></div>
+    </div>
+
+    <div id="damage-flash"></div>
+
+    <!-- ============== TOUCH CONTROLS ============== -->
+    <div id="touch-ui">
+      <div id="look-zone"></div>
+
+      <div id="joystick">
+        <div id="joy-base"><div id="joy-knob"></div></div>
+      </div>
+
+      <div id="action-buttons">
+        <button class="act-btn" id="btn-reload"><span>R</span><i>换弹</i></button>
+        <button class="act-btn" id="btn-jump"><span>⤒</span><i>跳</i></button>
+        <button class="act-btn" id="btn-aim"><span>◎</span><i>瞄准</i></button>
+        <button class="act-btn" id="btn-sprint"><span>»</span><i>疾跑</i></button>
+      </div>
+
+      <button id="btn-fire"><span class="fire-ring"></span><span class="fire-core"></span></button>
+
+      <div id="weapon-switch">
+        <button class="wpn-btn" data-slot="0">1<i>突击</i></button>
+        <button class="wpn-btn" data-slot="1">2<i>冲锋</i></button>
+        <button class="wpn-btn" data-slot="2">3<i>霰弹</i></button>
+        <button class="wpn-btn" data-slot="3">4<i>狙击</i></button>
+        <button class="wpn-btn" data-slot="4">5<i>手枪</i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== LOADING ===================== -->
+  <div id="loading">
+    <div class="load-inner">
+      <h1 class="brand">SNOWBOUND</h1>
+      <p class="brand-sub">雪 原 站 场</p>
+      <div class="bar-wrap"><div id="load-bar"></div></div>
+      <div id="load-text">初始化引擎…</div>
+    </div>
+  </div>
+
+  <!-- ===================== START MENU ===================== -->
+  <div id="menu" class="overlay hidden">
+    <div class="menu-inner">
+      <h1 class="brand">SNOWBOUND</h1>
+      <p class="brand-sub">雪 原 站 场 · 生存射击</p>
+
+      <div class="menu-settings">
+        <label class="setting">
+          <span>画质</span>
+          <select id="opt-quality">
+            <option value="low">流畅 (省电)</option>
+            <option value="medium">均衡</option>
+            <option value="high" selected>高画质</option>
+            <option value="ultra">极致 (高配)</option>
+          </select>
+        </label>
+        <label class="setting">
+          <span>灵敏度</span>
+          <input type="range" id="opt-sens" min="20" max="300" value="100" />
+        </label>
+        <label class="setting">
+          <span>音量</span>
+          <input type="range" id="opt-vol" min="0" max="100" value="85" />
+        </label>
+        <label class="setting">
+          <span>左手模式</span>
+          <input type="checkbox" id="opt-lefty" />
+        </label>
+      </div>
+
+      <button id="btn-start" class="big-btn">开 始 作 战</button>
+      <div class="controls-hint">
+        <p><b>手机：</b>左摇杆移动 · 右半屏滑动转视角 · 右下射击 · 侧键换弹/跳跃/瞄准</p>
+        <p><b>电脑：</b>WASD 移动 · 鼠标转视角 · 左键开火 · 右键瞄准 · R 换弹 · 空格跳 · 1-5 换枪 · Shift 疾跑</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PAUSE ===================== -->
+  <div id="pause" class="overlay hidden">
+    <div class="menu-inner">
+      <h2>已 暂 停</h2>
+      <button id="btn-resume" class="big-btn">继续作战</button>
+      <button id="btn-restart" class="ghost-btn">重新开始</button>
+      <button id="btn-quit" class="ghost-btn">返回主菜单</button>
+    </div>
+  </div>
+
+  <!-- ===================== GAME OVER ===================== -->
+  <div id="gameover" class="overlay hidden">
+    <div class="menu-inner">
+      <h2 class="danger">任 务 失 败</h2>
+      <div class="result">
+        <div><span class="k">存活波次</span><b id="go-wave">0</b></div>
+        <div><span class="k">击杀</span><b id="go-kills">0</b></div>
+        <div><span class="k">分数</span><b id="go-score">0</b></div>
+      </div>
+      <button id="btn-retry" class="big-btn">再 战 一 次</button>
+      <button id="btn-gomenu" class="ghost-btn">返回主菜单</button>
+    </div>
+  </div>
+
+  <div id="orientation-hint">
+    <div>
+      <div class="rot-icon">⟳</div>
+      <p>请横屏游玩</p>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
