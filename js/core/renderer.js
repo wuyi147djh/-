@@ -120,7 +120,9 @@ export class Renderer {
 
   resize() {
     const q = QUALITY[this.quality];
-    const w = window.innerWidth, h = window.innerHeight;
+    // 以舞台(#app)实际尺寸为准，而不是窗口尺寸 —— 竖版下面有黑边时两者不同
+    const w = this.canvas.clientWidth || window.innerWidth;
+    const h = this.canvas.clientHeight || window.innerHeight;
     const dpr = Math.min(window.devicePixelRatio || 1, q.pr);
     this.renderer.setPixelRatio(Math.max(0.5, dpr));
     this.renderer.setSize(w, h, false);
@@ -128,6 +130,17 @@ export class Renderer {
     this.camera.updateProjectionMatrix();
     this._teardownComposer();
     this._buildComposer();
+  }
+
+  // 竖版换算：竖屏时纵向 FOV 会被压得很窄，这里反过来按「保持横向视野」推垂直 FOV
+  // 上限 85 是为了在「横向看得见敌人」和「持枪模型不被拉小太多」之间取平衡
+  adaptFov(baseVfov) {
+    const aspect = this.camera.aspect || 1;
+    const REF = 16 / 9;
+    if (aspect >= REF) return baseVfov;         // 宽屏：与原设定一致
+    const hRef = Math.tan(THREE.MathUtils.degToRad(baseVfov) / 2) * REF;
+    const vfov = 2 * Math.atan(hRef / aspect);
+    return Math.min(THREE.MathUtils.radToDeg(vfov), 85);
   }
 
   render() {
