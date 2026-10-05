@@ -157,11 +157,41 @@ class Game {
       }
     });
 
+    // 竖屏：允许直接游玩（系统方向锁定时也能玩）
+    $('btn-play-portrait').addEventListener('click', () => this.usePortrait());
+    $('btn-force-landscape').addEventListener('click', () => this.tryLandscape());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.renderer.resize(), 120));
+
     this.input.onWeapon = (slot) => { if (this.state === 'playing') this.weapons.switchTo(slot); };
     this.input.onPause = () => this.togglePause();
 
     // 默认桌面/触屏标记
     document.body.classList.toggle('desktop', !this.input.isTouch);
+    // 上次选择过竖屏游玩则不再拦截
+    try {
+      if (localStorage.getItem('snowbound.portrait') === '1') document.body.classList.add('portrait-ok');
+    } catch (e) { /* 隐私模式下忽略 */ }
+  }
+
+  // 竖屏直接游玩
+  usePortrait() {
+    document.body.classList.add('portrait-ok');
+    try { localStorage.setItem('snowbound.portrait', '1'); } catch (e) { /* 忽略 */ }
+    setTimeout(() => this.renderer.resize(), 60);
+  }
+
+  // 尝试全屏并锁定横屏（iOS Safari 不支持时会自动退回竖屏游玩）
+  async tryLandscape() {
+    try {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) await el.requestFullscreen();
+      if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+      document.body.classList.remove('portrait-ok');
+      try { localStorage.removeItem('snowbound.portrait'); } catch (e) { /* 忽略 */ }
+    } catch (e) {
+      this.usePortrait();
+    }
+    setTimeout(() => this.renderer.resize(), 150);
   }
 
   _hitTest(origin, dir, far) {

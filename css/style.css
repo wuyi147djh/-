@@ -186,13 +186,54 @@ body{
 /* orientation hint */
 #orientation-hint{position:absolute;inset:0;z-index:80;display:none;align-items:center;justify-content:center;
   background:#080c11;text-align:center;}
+.rot-inner{padding:24px;max-width:88vw;}
 #orientation-hint .rot-icon{font-size:56px;animation:rot 2s ease-in-out infinite;}
 #orientation-hint p{margin-top:16px;letter-spacing:.3em;color:var(--dim);}
+.rot-actions{display:flex;flex-direction:column;gap:10px;margin-top:26px;}
+.rot-btn{width:min(78vw,320px);padding:14px;font-size:15px;letter-spacing:.18em;border-radius:12px;
+  color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--stroke);cursor:pointer;}
+.rot-btn:active{background:rgba(255,255,255,.14);}
+.rot-btn.primary{color:#04121a;font-weight:700;background:linear-gradient(180deg,#9ef2ff,#4fc9f0);border:none;
+  box-shadow:0 8px 30px rgba(79,201,240,.35);}
+.rot-tip{margin-top:18px;font-size:12px;letter-spacing:.06em;line-height:1.7;color:var(--dim);}
 @keyframes rot{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
 
 /* desktop: hide touch-only bits */
 body.desktop #touch-ui{display:none;}
 body.desktop #health-panel{width:230px;}
 @media (orientation:portrait) and (pointer:coarse){
-  body:not(.desktop) #orientation-hint{display:flex;}
+  body:not(.desktop):not(.portrait-ok) #orientation-hint{display:flex;}
+}
+
+/* 横屏触屏：弹药面板左移，避免被右下开火键压住 */
+@media (orientation:landscape) and (pointer:coarse){
+  body:not(.desktop) #weapon-panel{right:calc(136px + var(--safe-r));}
+}
+
+/* ---- 手机竖屏布局：不用横屏也能正常游玩 ---- */
+@media (orientation:portrait) and (pointer:coarse){
+  /* 顶部：换枪条 / 血量 / 弹药（依次下移，避开顶栏波次面板） */
+  #weapon-switch{left:calc(12px + var(--safe-l));right:auto;bottom:auto;
+    top:calc(94px + var(--safe-t));transform:none;gap:5px;}
+  .wpn-btn{width:44px;height:38px;font-size:13px;border-radius:8px;}
+  .wpn-btn i{font-size:7px;letter-spacing:0;}
+
+  #health-panel{left:calc(12px + var(--safe-l));bottom:auto;top:calc(142px + var(--safe-t));width:min(46vw,190px);}
+  #health-num{font-size:24px;}
+
+  #weapon-panel{right:calc(14px + var(--safe-r));bottom:auto;top:calc(96px + var(--safe-t));}
+  #ammo{font-size:30px;}
+
+  #killfeed{top:calc(154px + var(--safe-t));}
+
+  /* 底部：左摇杆 / 右开火，双手自然落位 */
+  #joystick{left:calc(18px + var(--safe-l));bottom:calc(30px + var(--safe-b));}
+  #joy-base{width:124px;height:124px;}
+  #joy-knob{width:54px;height:54px;margin:-27px 0 0 -27px;}
+
+  #btn-fire{right:calc(18px + var(--safe-r));bottom:calc(30px + var(--safe-b));width:104px;height:104px;}
+  .fire-core{width:74px;height:74px;}
+
+  #action-buttons{right:calc(14px + var(--safe-r));bottom:calc(146px + var(--safe-b));gap:10px;}
+  .act-btn{width:58px;height:58px;font-size:17px;}
 }
