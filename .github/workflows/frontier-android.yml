@@ -16,6 +16,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Godot Android export environment
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates/ ~/.config/
+          if [ -d /root/.config/godot ]; then
+            cp -a /root/.config/godot ~/.config/godot
+          fi
+          if [ -d /root/.local/share/godot/export_templates/4.3.stable ]; then
+            cp -a /root/.local/share/godot/export_templates/4.3.stable ~/.local/share/godot/export_templates/
+          fi
+          mkdir -p ~/.config/godot
+          touch ~/.config/godot/editor_settings-4.3.tres
+          grep -q 'export/android/java_sdk_path' ~/.config/godot/editor_settings-4.3.tres || echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> ~/.config/godot/editor_settings-4.3.tres
       - name: Prepare Android signing key
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
@@ -28,7 +40,7 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           mkdir -p build
-          godot --headless --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
+          godot --headless --verbose --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
