@@ -13,6 +13,8 @@ var move_touch := -1
 var last_touch := Vector2.ZERO
 var move_origin := Vector2.ZERO
 var move_vector := Vector2.ZERO
+var recoil := 0.0
+var muzzle_light: OmniLight3D
 func _ready() -> void:
     var col := CollisionShape3D.new()
     var capsule := CapsuleShape3D.new()
@@ -40,9 +42,20 @@ func _ready() -> void:
         gun.mesh = gm
         gun.position = Vector3(0.28, -0.24, -0.58)
         camera.add_child(gun)
+    muzzle_light = OmniLight3D.new()
+    muzzle_light.light_color = Color(1.0, 0.63, 0.24)
+    muzzle_light.light_energy = 0.0
+    muzzle_light.omni_range = 3.5
+    muzzle_light.position = Vector3(0.28, -0.22, -1.0)
+    camera.add_child(muzzle_light)
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 func _physics_process(delta: float) -> void:
     fire_cd = maxf(0, fire_cd - delta)
+    recoil = move_toward(recoil, 0.0, delta * 2.8)
+    if is_instance_valid(camera):
+        camera.rotation.x = clampf(pitch + recoil, -1.45, 1.45)
+        if is_instance_valid(muzzle_light) and muzzle_light.light_energy > 0.0:
+            muzzle_light.light_energy = maxf(0.0, muzzle_light.light_energy - delta * 24.0)
     var input := Vector2(Input.get_action_strength("move_right") - Input.get_action_strength("move_left"), Input.get_action_strength("move_back") - Input.get_action_strength("move_forward"))
     input += move_vector
     input = input.limit_length(1.0)
@@ -84,6 +97,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func shoot() -> void:
     if fire_cd > 0: return
     fire_cd = 0.105
+    recoil = minf(recoil + (0.035 if aiming else 0.075), 0.22)
+    if is_instance_valid(muzzle_light):
+        muzzle_light.light_energy = 2.8
     fired.emit(camera.global_position, -camera.global_transform.basis.z)
 func jump() -> void:
     if is_on_floor(): velocity.y = 8.2
