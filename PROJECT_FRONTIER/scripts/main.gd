@@ -42,6 +42,14 @@ func _ready() -> void:
     intro.set_script(load("res://scripts/frontier_intro.gd"))
     intro.setup(self, player)
     add_child(intro)
+    # CI-only real-engine capture path: bypass the title sequence and save an actual rendered frame.
+    if OS.get_cmdline_user_args().has("--capture-gameplay"):
+        await get_tree().create_timer(0.8).timeout
+        if is_instance_valid(intro):
+            await intro._deploy()
+        await get_tree().create_timer(2.5).timeout
+        var frame := get_viewport().get_texture().get_image()
+        frame.save_png("build/PROJECT_FRONTIER-runtime.png")
 func _process(delta: float) -> void:
     mission_time += delta
     status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   KIA %02d   |   %02d:%02d" % [enemies.size(), kills, int(mission_time) / 60, int(mission_time) % 60]
