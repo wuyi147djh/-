@@ -130,7 +130,35 @@ func _spawn_enemy(pos: Vector3) -> void:
         e.queue_free()
         return
     var ai := GDScript.new()
-    ai.source_code = "extends CharacterBody3D\nvar hp=100.0\nvar target: Node3D\nvar game: Node\nvar attack_cd=0.0\nfunc _physics_process(d):\n if not is_instance_valid(target): return\n var v=target.global_position-global_position; v.y=0\n if v.length()>13.0: velocity=v.normalized()*2.7\n else: velocity=Vector3.ZERO\n if v.length()>0.2: look_at(global_position+v,Vector3.UP)\n velocity.y-=24.0*d; move_and_slide()\n attack_cd-=d\n if v.length()<32.0 and attack_cd<=0: attack_cd=1.35; target.take_damage(5); if is_instance_valid(game): game._enemy_shot(global_position)\nfunc hit(dmg):\n hp-=dmg\n if hp<=0: queue_free()\n"
+    ai.source_code = """extends CharacterBody3D
+var hp = 100.0
+var target: Node3D
+var game: Node
+var attack_cd = 0.0
+func _physics_process(d):
+    if not is_instance_valid(target):
+        return
+    var v = target.global_position - global_position
+    v.y = 0
+    if v.length() > 13.0:
+        velocity = v.normalized() * 2.7
+    else:
+        velocity = Vector3.ZERO
+    if v.length() > 0.2:
+        look_at(global_position + v, Vector3.UP)
+    velocity.y -= 24.0 * d
+    move_and_slide()
+    attack_cd -= d
+    if v.length() < 32.0 and attack_cd <= 0.0:
+        attack_cd = 1.35
+        target.take_damage(5)
+        if is_instance_valid(game):
+            game._enemy_shot(global_position)
+func hit(dmg):
+    hp -= dmg
+    if hp <= 0:
+        queue_free()
+"""
     e.set_script(ai)
     e.set("target",player)
     e.set("game",self)
