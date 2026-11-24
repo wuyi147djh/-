@@ -17,16 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Prepare Android signing key
-        working-directory: PROJECT_FRONTIER
         run: |
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          sed -i 's|keystore/debug=""|keystore/debug="debug.keystore"|' export_presets.cfg
       - name: Import project
-        working-directory: PROJECT_FRONTIER
-        run: godot --headless --editor --path . --quit
-      - name: Export Android ARM64 APK
-        working-directory: PROJECT_FRONTIER
         run: |
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
+          godot --headless --editor --path . --quit
+      - name: Export Android ARM64 APK
+        run: |
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           mkdir -p build
           godot --headless --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
       - name: Upload APK
@@ -35,3 +35,4 @@ jobs:
           name: PROJECT_FRONTIER-Android-ARM64-debug
           path: PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk
           if-no-files-found: error
+          retention-days: 7
