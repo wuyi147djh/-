@@ -27,8 +27,17 @@ func _ready() -> void:
     if ResourceLoader.exists(reload_path):
         reload_audio.stream = load(reload_path)
     add_child(reload_audio)
-    for i in range(9):
-        _spawn_enemy(Vector3(randf_range(-42, 42), 1.0, randf_range(-49, -8)))
+    # Enemy squad is deliberately placed inside the playable objective courtyard,
+    # not scattered across the old oversized terrain coordinates.
+    var enemy_spawns: Array[Vector3] = [
+        Vector3(-8.0, 1.0, 8.0), Vector3(8.0, 1.0, 8.0),
+        Vector3(-12.0, 1.0, 2.0), Vector3(12.0, 1.0, 2.0),
+        Vector3(-6.0, 1.0, -4.0), Vector3(6.0, 1.0, -4.0),
+        Vector3(-2.0, 1.0, 12.0), Vector3(2.0, 1.0, -6.0),
+        Vector3(0.0, 1.0, 5.0)
+    ]
+    for spawn_point in enemy_spawns:
+        _spawn_enemy(spawn_point)
     var intro := CanvasLayer.new()
     intro.set_script(load("res://scripts/frontier_intro.gd"))
     intro.setup(self, player)
@@ -78,7 +87,7 @@ func _build_world() -> void:
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
     add_child(sun)
 
-    var world_path := "res://assets/world/battle_royale_town_airfield.glb"
+    var world_path := "res://assets/world/tactical_hill_town_site_a.glb"
     if not ResourceLoader.exists(world_path):
         push_error("CRITICAL: complete town/airfield GLB missing. No primitive or low-poly fallback is permitted.")
         return
@@ -87,9 +96,9 @@ func _build_world() -> void:
         push_error("CRITICAL: town/airfield GLB failed to import.")
         return
     var world_instance := world_scene.instantiate()
-    world_instance.name = "AUTHORED_REALISTIC_TOWN_AND_AIRFIELD"
-    world_instance.position = Vector3(0.0, 0.0, -28.0)
-    world_instance.scale = Vector3.ONE * 1.55
+    world_instance.name = "TACTICAL_HILL_TOWN_OBJECTIVE_SITE_A"
+    world_instance.position = Vector3.ZERO
+    world_instance.scale = Vector3.ONE
     add_child(world_instance)
     _add_static_collisions(world_instance)
 
@@ -110,7 +119,8 @@ func _add_static_collisions(root: Node) -> void:
 func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
-    player.position = Vector3(0,1.2,-30)
+    # Spawn just outside the south entrance, facing into the objective square.
+    player.position = Vector3(0.0, 1.2, 20.5)
     add_child(player)
     player.fired.connect(_on_player_fired)
 func _spawn_enemy(pos: Vector3) -> void:
