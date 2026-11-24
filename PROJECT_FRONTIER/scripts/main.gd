@@ -251,30 +251,6 @@ func _update_ammo() -> void:
     var l:=hud.get_node_or_null("Control/Ammo")
     if l: l.text="%02d / %03d" % [ammo,reserve]
 
-func _surface_material(surface_name: String, tint: Color) -> StandardMaterial3D:
-    var m := StandardMaterial3D.new()
-    m.albedo_color = tint
-    m.roughness = 0.88
-    var key := ""
-    if surface_name == "Terrain":
-        key = "Ground110"
-    elif surface_name == "Highway" or surface_name == "Road marking":
-        key = "Asphalt031"
-    elif surface_name.find("Bunker") >= 0 or surface_name.find("structure") >= 0:
-        key = "Concrete047A"
-    elif surface_name.find("Rock") >= 0:
-        key = "Concrete034"
-    var base := "res://assets/ironline/textures/" + key + "/"
-    if key != "" and ResourceLoader.exists(base + "Color.webp"):
-        m.albedo_texture = load(base + "Color.webp")
-        if ResourceLoader.exists(base + "NormalGL.webp"):
-            m.normal_enabled = true
-            m.normal_texture = load(base + "NormalGL.webp")
-            m.normal_scale = 0.7
-        if ResourceLoader.exists(base + "Roughness.webp"):
-            m.roughness_texture = load(base + "Roughness.webp")
-    return m
-
 func _place_prop(asset_path: String, pos: Vector3, scale_factor: float = 1.0, yaw: float = 0.0) -> void:
     if not ResourceLoader.exists(asset_path):
         return
@@ -286,54 +262,6 @@ func _place_prop(asset_path: String, pos: Vector3, scale_factor: float = 1.0, ya
     instance.rotation.y = yaw
     instance.scale = Vector3.ONE * scale_factor
     add_child(instance)
-
-func _box(n: String,p: Vector3,s: Vector3,c: Color,collide: bool) -> void:
-    var b: StaticBody3D=StaticBody3D.new() if collide else StaticBody3D.new()
-    b.name=n
-    b.position=p
-    var mi:=MeshInstance3D.new()
-    var bm:=BoxMesh.new()
-    bm.size=s
-    mi.mesh=bm
-    mi.material_override=_surface_material(n,c)
-    b.add_child(mi)
-    if collide:
-        var cs:=CollisionShape3D.new()
-        var bs:=BoxShape3D.new()
-        bs.size=s
-        cs.shape=bs
-        b.add_child(cs)
-    else:
-        b.collision_layer=0
-        b.collision_mask=0
-    add_child(b)
-func _cylinder(p: Vector3,r: float,h: float,c: Color) -> void:
-    var mi:=MeshInstance3D.new()
-    var m:=CylinderMesh.new()
-    m.top_radius=r*0.75
-    m.bottom_radius=r
-    m.height=h
-    mi.mesh=m
-    mi.position=p
-    var mat:=StandardMaterial3D.new()
-    mat.albedo_color=c
-    mat.roughness=1.0
-    mi.material_override=mat
-    add_child(mi)
-func _cone(p: Vector3,r: float,h: float,c: Color) -> void:
-    var mi:=MeshInstance3D.new()
-    var m:=CylinderMesh.new()
-    m.top_radius=0.0
-    m.bottom_radius=r
-    m.height=h
-    mi.mesh=m
-    mi.position=p
-    var mat:=StandardMaterial3D.new()
-    mat.albedo_color=c
-    mat.roughness=0.95
-    mi.material_override=mat
-    add_child(mi)
-
 
 func _add_smoke(pos: Vector3) -> void:
     var smoke := GPUParticles3D.new()
@@ -362,56 +290,6 @@ func _add_smoke(pos: Vector3) -> void:
     puff.material = mat
     smoke.draw_pass_1 = puff
     add_child(smoke)
-
-
-func _build_mountain_range() -> void:
-    var vertices := PackedVector3Array()
-    var uvs := PackedVector2Array()
-    var indices := PackedInt32Array()
-    var noise := FastNoiseLite.new()
-    noise.seed = 4172
-    noise.frequency = 0.018
-    noise.fractal_octaves = 4
-    var nx := 121
-    var nz := 24
-    for iz in range(nz):
-        for ix in range(nx):
-            var x := -120.0 + float(ix) * 2.0
-            var z := -180.0 + float(iz) * 2.4
-            var peaks := 8.0
-            peaks += 26.0 * exp(-pow((x + 62.0) / 25.0, 2.0))
-            peaks += 38.0 * exp(-pow((x - 4.0) / 31.0, 2.0))
-            peaks += 23.0 * exp(-pow((x - 76.0) / 22.0, 2.0))
-            var detail := noise.get_noise_2d(x * 1.4, z) * 3.8
-            var vertical_profile := 0.78 + 0.22 * sin(float(iz) / float(nz - 1) * PI)
-            vertices.append(Vector3(x, maxf(2.0, (peaks + detail) * vertical_profile), z))
-            uvs.append(Vector2(float(ix) / 12.0, float(iz) / 4.0))
-    for iz in range(nz - 1):
-        for ix in range(nx - 1):
-            var a := iz * nx + ix
-            var b := a + nx
-            indices.append_array(PackedInt32Array([a, b, a + 1, a + 1, b, b + 1]))
-    var arrays := []
-    arrays.resize(Mesh.ARRAY_MAX)
-    arrays[Mesh.ARRAY_VERTEX] = vertices
-    arrays[Mesh.ARRAY_TEX_UV] = uvs
-    arrays[Mesh.ARRAY_INDEX] = indices
-    var raw_mesh := ArrayMesh.new()
-    raw_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-    var smooth_builder := SurfaceTool.new()
-    smooth_builder.create_from(raw_mesh, 0)
-    smooth_builder.generate_normals()
-    var mountain_mesh := smooth_builder.commit()
-    var mountain := MeshInstance3D.new()
-    mountain.name = "Distant mountain range"
-    mountain.mesh = mountain_mesh
-    mountain.position = Vector3(0, -1.5, 0)
-    var rock_material := _surface_material("Rock", Color(0.24, 0.29, 0.30))
-    rock_material.uv1_scale = Vector3(5.0, 5.0, 1.0)
-    rock_material.roughness = 1.0
-    mountain.material_override = rock_material
-    mountain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-    add_child(mountain)
 
 
 func _enemy_shot(pos: Vector3) -> void:
