@@ -31,7 +31,6 @@ jobs:
           test -d /tmp/godot-templates/templates
           cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
           printf '4.3.stable\n' > "$TEMPLATE_DIR/version.txt"
-          test -s "$TEMPLATE_DIR/android_source.zip"
           test -s "$TEMPLATE_DIR/android_debug.apk"
           test -s "$TEMPLATE_DIR/android_release.apk"
           ANDROID_SDK_PATH="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
@@ -55,11 +54,24 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           godot --headless --editor --path . --quit
-      - name: Install Android build template
+      - name: Verify export preset uses prebuilt Android templates
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
-          godot --headless --editor --path . --install-android-build-template --quit
-          test -f android/build.gradle
+          grep -q '^gradle_build/use_gradle_build=false      - name: Export Android ARM64 APK
+        run: |
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
+          mkdir -p build
+          godot --headless --verbose --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
+          test -s build/PROJECT_FRONTIER.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROJECT_FRONTIER-Android-ARM64-debug
+          path: PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk
+          if-no-files-found: error
+          retention-days: 7
+ export_presets.cfg
+          test -s "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
       - name: Export Android ARM64 APK
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
