@@ -1,0 +1,37 @@
+name: Build PROJECT FRONTIER Android APK
+on:
+  push:
+    paths:
+      - 'PROJECT_FRONTIER/**'
+      - '.github/workflows/frontier-android.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+jobs:
+  android-arm64:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Prepare Android signing key
+        working-directory: PROJECT_FRONTIER
+        run: |
+          keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          sed -i 's|keystore/debug=""|keystore/debug="debug.keystore"|' export_presets.cfg
+      - name: Import project
+        working-directory: PROJECT_FRONTIER
+        run: godot --headless --editor --path . --quit
+      - name: Export Android ARM64 APK
+        working-directory: PROJECT_FRONTIER
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROJECT_FRONTIER-Android-ARM64-debug
+          path: PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk
+          if-no-files-found: error
