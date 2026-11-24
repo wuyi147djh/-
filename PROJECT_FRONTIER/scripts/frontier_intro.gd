@@ -98,6 +98,15 @@ func _build_interface() -> void:
     root.add_child(start_button)
 
 func _play_opening_sequence() -> void:
+    var reveal := create_tween()
+    reveal.tween_property(shade, "color:a", 0.30, 2.4)
+    if is_instance_valid(player):
+        var camera := player.get_node_or_null("Camera3D") as Camera3D
+        var pan := create_tween()
+        pan.set_parallel(true)
+        pan.tween_property(player, "rotation:y", deg_to_rad(28.0), 8.0).from(0.0)
+        if camera:
+            pan.tween_property(camera, "fov", 68.0, 5.0).from(82.0)
     var beats := [
         ["2031年，全球能源与航运网络接连中断。", "YEAR 2031  //  GLOBAL CRISIS"],
         ["边境通讯突然沉默。一支联合侦察队在北部群山失联。", "SIGNAL LOST  //  NORTHERN FRONTIER"],
