@@ -1,4 +1,5 @@
 extends Node3D
+# Runtime screenshot and tactical map validation enabled for this release candidate.
 const PLAYER_SCRIPT = preload("res://scripts/player.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
