@@ -22,7 +22,9 @@ jobs:
           apt-get install -y --no-install-recommends curl unzip ca-certificates
           mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable" "$HOME/.config/godot"
           curl -fL --retry 3 --retry-delay 2 "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz" -o /tmp/godot-4.3-templates.tpz
-          unzip -oq /tmp/godot-4.3-templates.tpz -d "$HOME/.local/share/godot/export_templates/4.3.stable"
+          mkdir -p /tmp/godot-templates
+          unzip -oq /tmp/godot-4.3-templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.3.stable/"
           printf '4.3.stable\n' > "$HOME/.local/share/godot/export_templates/4.3.stable/version.txt"
           test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_source.zip"
           touch "$HOME/.config/godot/editor_settings-4.3.tres"
