@@ -119,6 +119,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PROJECT_FRONTIER-Android-ARM64-debug
-          path: |\n            PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk\n            PROJECT_FRONTIER/build/PROJECT_FRONTIER-runtime.png
+          path: |
+            PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk
+            PROJECT_FRONTIER/build/PROJECT_FRONTIER-runtime.png
           if-no-files-found: error
           retention-days: 7
