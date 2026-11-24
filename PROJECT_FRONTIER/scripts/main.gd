@@ -11,6 +11,8 @@ var enemies: Array[Node3D] = []
 var ammo := 30
 var reserve := 180
 var mission_time := 0.0
+var kills := 0
+var kills_label: Label
 func _ready() -> void:
     _build_world()
     _spawn_player()
@@ -33,9 +35,11 @@ func _ready() -> void:
     add_child(intro)
 func _process(delta: float) -> void:
     mission_time += delta
-    status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   %02d:%02d" % [enemies.size(), int(mission_time) / 60, int(mission_time) % 60]
+    status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   KIA %02d   |   %02d:%02d" % [enemies.size(), kills, int(mission_time) / 60, int(mission_time) % 60]
     mission_label.text = "PRIMARY OBJECTIVE: SECURE THE OUTPOST" if enemies.size() > 0 else "OUTPOST SECURED  —  MOVE TO EXTRACTION"
     health_label.text = "VITALS  %03d" % player.health
+    if is_instance_valid(kills_label):
+        kills_label.text = "CONFIRMED KILLS  %02d / 09" % kills
 func _build_world() -> void:
     var we := WorldEnvironment.new()
     var env := Environment.new()
@@ -163,6 +167,8 @@ func _physics_process(d):
 func hit(dmg):
     hp -= dmg
     if hp <= 0:
+        if is_instance_valid(game):
+            game._enemy_killed()
         queue_free()
 """
     e.set_script(ai)
@@ -203,6 +209,12 @@ func _build_hud() -> void:
     health_label.add_theme_font_size_override("font_size", 21)
     health_label.add_theme_color_override("font_color", Color(0.82, 0.9, 0.82))
     root.add_child(health_label)
+    kills_label = Label.new()
+    kills_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    kills_label.position = Vector2(-250, 52)
+    kills_label.add_theme_font_size_override("font_size", 16)
+    kills_label.add_theme_color_override("font_color", Color(0.78, 0.84, 0.75))
+    root.add_child(kills_label)
     var cross:=Label.new()
     cross.text="+"
     cross.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -245,6 +257,8 @@ func _button(root: Control, caption: String, offset: Vector2, size: Vector2, act
     )
     root.add_child(b)
 func _reload() -> void:
+    if ammo >= 30 or reserve <= 0:
+        return
     var n: int=min(30-ammo,reserve)
     ammo+=n
     reserve-=n
@@ -295,6 +309,12 @@ func _add_smoke(pos: Vector3) -> void:
     smoke.draw_pass_1 = puff
     add_child(smoke)
 
+
+func _enemy_killed() -> void:
+    kills += 1
+    if kills >= 9:
+        mission_label.text = "OUTPOST SECURED  —  ALL HOSTILES ELIMINATED"
+        status_label.text = "MISSION COMPLETE  //  PROCEED TO EXTRACTION"
 
 func _enemy_shot(pos: Vector3) -> void:
     var path := "res://assets/ironline/audio/guns/ak74_enemy_distant.ogg"
