@@ -45,7 +45,11 @@ jobs:
           curl -fL --retry 4 --retry-delay 2 "https://cdn.3dassets.dev/assets/28276/v1/model.glb" -o "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/battle_royale_town_airfield.glb"
           test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/battle_royale_town_airfield.glb"
           test "$(stat -c%s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/battle_royale_town_airfield.glb")" -gt 5000000
-          echo "Verified CC0 470k-triangle complete town and airfield environment."
+          echo "Verified CC0 470k-triangle town and airfield environment."
+          curl -fL --retry 4 --retry-delay 2 "https://cdn.3dassets.dev/assets/27595/v1/model.glb" -o "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/tactical_hill_town_site_a.glb"
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/tactical_hill_town_site_a.glb"
+          test "$(stat -c%s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/tactical_hill_town_site_a.glb")" -gt 1500000
+          echo "Verified tactical objective map: roofed buildings, courtyard, fountain, crates, sandbags and defenders (CC0 pack)."
           du -sh "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets"
 
       - name: Prepare Godot Android export environment
