@@ -27,6 +27,10 @@ func _ready() -> void:
     add_child(reload_audio)
     for i in range(9):
         _spawn_enemy(Vector3(randf_range(-42, 42), 1.0, randf_range(-49, -8)))
+    var intro := CanvasLayer.new()
+    intro.set_script(load("res://scripts/frontier_intro.gd"))
+    intro.setup(self, player)
+    add_child(intro)
 func _process(delta: float) -> void:
     mission_time += delta
     status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   %02d:%02d" % [enemies.size(), int(mission_time) / 60, int(mission_time) % 60]
