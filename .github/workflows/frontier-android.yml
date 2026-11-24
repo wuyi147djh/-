@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Godot Android export environment
         run: |
+          apt-get update
+          apt-get install -y --no-install-recommends curl unzip ca-certificates
           mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable" "$HOME/.config/godot"
           curl -fL --retry 3 --retry-delay 2 "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz" -o /tmp/godot-4.3-templates.tpz
           unzip -oq /tmp/godot-4.3-templates.tpz -d "$HOME/.local/share/godot/export_templates/4.3.stable"
