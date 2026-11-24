@@ -36,12 +36,7 @@ func _ready() -> void:
             weapon.scale = Vector3.ONE * 0.8
             camera.add_child(weapon)
     else:
-        var gun := MeshInstance3D.new()
-        var gm := BoxMesh.new()
-        gm.size = Vector3(0.16, 0.16, 0.72)
-        gun.mesh = gm
-        gun.position = Vector3(0.28, -0.24, -0.58)
-        camera.add_child(gun)
+        push_error("CRITICAL: M4A1 first-person model missing; refusing to display a primitive weapon placeholder.")
     muzzle_light = OmniLight3D.new()
     muzzle_light.light_color = Color(1.0, 0.63, 0.24)
     muzzle_light.light_energy = 0.0
