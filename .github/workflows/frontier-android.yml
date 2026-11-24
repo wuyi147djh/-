@@ -22,6 +22,8 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends curl ca-certificates
           git clone --depth 1 --filter=blob:none --sparse https://github.com/cktang88/3d-fps.git /tmp/ironline-assets
           cd /tmp/ironline-assets
           git sparse-checkout set public/assets/models public/assets/textures public/assets/hdr public/assets/audio/guns public/assets/audio/foley public/assets/audio/steps public/assets/ambience
