@@ -26,7 +26,7 @@ func _ready() -> void:
         reload_audio.stream = load(reload_path)
     add_child(reload_audio)
     for i in range(9):
-        _spawn_enemy(Vector3(randf_range(-48, 48), 1.0, randf_range(-85, -20)))
+        _spawn_enemy(Vector3(randf_range(-42, 42), 1.0, randf_range(-49, -8)))
 func _process(delta: float) -> void:
     mission_time += delta
     status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   %02d:%02d" % [enemies.size(), int(mission_time) / 60, int(mission_time) % 60]
@@ -37,11 +37,11 @@ func _build_world() -> void:
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
     var sky := Sky.new()
+    var panorama := PanoramaSkyMaterial.new()
     var hdr_path := "res://assets/ironline/hdr/bambanani_sunset_2k.hdr"
     if ResourceLoader.exists(hdr_path):
-        var panorama := PanoramaSkyMaterial.new()
         panorama.panorama = load(hdr_path)
-        panorama.energy_multiplier = 0.72
+        panorama.energy_multiplier = 0.82
         sky.sky_material = panorama
     else:
         var sm := ProceduralSkyMaterial.new()
@@ -52,55 +52,57 @@ func _build_world() -> void:
         sky.sky_material = sm
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.48, 0.52, 0.58)
-    env.ambient_light_energy = 0.7
+    env.ambient_light_color = Color(0.52, 0.56, 0.62)
+    env.ambient_light_energy = 0.78
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.fog_enabled = true
     env.fog_light_color = Color(0.48, 0.55, 0.58)
-    env.fog_density = 0.0018
+    env.fog_density = 0.0009
+    env.sdfgi_enabled = false
     we.environment = env
     add_child(we)
+
     var sun := DirectionalLight3D.new()
-    sun.rotation_degrees = Vector3(-42, -28, 0)
-    sun.light_energy = 1.45
+    sun.rotation_degrees = Vector3(-38, -32, 0)
+    sun.light_energy = 1.55
     sun.shadow_enabled = true
-    sun.directional_shadow_max_distance = 180
+    sun.directional_shadow_max_distance = 120.0
+    sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
     add_child(sun)
-    _box("Terrain", Vector3(0,-1.2,-45), Vector3(150,2,180), Color(0.20,0.24,0.19), true)
-    _box("Highway", Vector3(0,0.03,-48), Vector3(13,0.12,150), Color(0.12,0.13,0.13), true)
-    for z in range(-115,20,8): _box("Road marking", Vector3(0,0.105,z), Vector3(0.22,0.025,3.4), Color(0.82,0.78,0.61), false)
-    _box("River", Vector3(47,-0.12,-60), Vector3(22,0.15,160), Color(0.055,0.19,0.24), false)
-    _box("Bridge", Vector3(44,0.4,-38), Vector3(35,0.8,12), Color(0.29,0.31,0.30), true)
-    _box("Command bunker", Vector3(-18,3,-75), Vector3(26,8,19), Color(0.25,0.29,0.27), true)
-    _box("Bunker roof", Vector3(-18,7.2,-75), Vector3(29,0.8,22), Color(0.16,0.19,0.18), false)
-    _box("Watch tower", Vector3(3,5,-82), Vector3(4,10,4), Color(0.28,0.30,0.27), true)
-    _build_mountain_range()
-    for i in range(7):
-        var x := randf_range(-42,42)
-        var z := randf_range(-125,-90)
-        if abs(x)>10:
-            var sz := Vector3(randf_range(7,13),randf_range(4,8),randf_range(7,12))
-            _box("Abandoned structure", Vector3(x,sz.y/2,z), sz, Color(0.28,0.27,0.23), true)
-    _place_prop("res://assets/ironline/models/props/old_military_crate/old_military_crate.glb", Vector3(-7,0.1,-28), 1.4, 0.4)
-    _place_prop("res://assets/ironline/models/props/ammo_box/ammo_box.glb", Vector3(-5,0.1,-29), 1.0, -0.2)
-    _place_prop("res://assets/ironline/models/props/portable_generator/portable_generator.glb", Vector3(7,0.1,-38), 1.0, 1.2)
-    _place_prop("res://assets/ironline/models/props/metal_jerrycan_green/metal_jerrycan_green.glb", Vector3(8,0.1,-37), 0.9, 0.7)
-    _place_prop("res://assets/ironline/models/props/concrete_road_barrier/concrete_road_barrier.glb", Vector3(-9,0.1,-46), 1.0, 0.0)
-    _place_prop("res://assets/ironline/models/props/covered_car/covered_car.glb", Vector3(18,0.1,-66), 1.0, -1.0)
-    # Replace cone-tree and cube-rock placeholders with authored military assets.
-    _place_prop("res://assets/ironline/ambience/models/uh60/uh60.glb", Vector3(27,0.25,-88), 1.0, -0.7)
-    _place_prop("res://assets/ironline/ambience/models/burnt_car/burnt_car.glb", Vector3(-31,0.05,-55), 1.0, 0.8)
-    _place_prop("res://assets/ironline/models/props/barrel_03/barrel_03.glb", Vector3(-11,0.1,-43), 1.0, 0.3)
-    _place_prop("res://assets/ironline/models/props/old_tyre/old_tyre.glb", Vector3(-13,0.1,-44), 1.0, 0.9)
-    _place_prop("res://assets/ironline/models/props/security_light/security_light.glb", Vector3(-26,0.1,-73), 1.0, 0.0)
-    _place_prop("res://assets/ironline/models/props/street_lamp_02/street_lamp_02.glb", Vector3(13,0.1,-58), 1.0, 0.0)
-    _place_prop("res://assets/ironline/models/props/utility_box_01/utility_box_01.glb", Vector3(-22,0.1,-78), 1.0, 0.0)
-    _place_prop("res://assets/ironline/models/props/modular_industrial_pipes_01/modular_industrial_pipes_01.glb", Vector3(-28,0.1,-79), 1.0, 0.0)
-    _add_smoke(Vector3(-31,1.5,-55))
+
+    var world_path := "res://assets/world/battle_royale_town_airfield.glb"
+    if not ResourceLoader.exists(world_path):
+        push_error("CRITICAL: complete town/airfield GLB missing. No primitive or low-poly fallback is permitted.")
+        return
+    var world_scene := load(world_path) as PackedScene
+    if world_scene == null:
+        push_error("CRITICAL: town/airfield GLB failed to import.")
+        return
+    var world_instance := world_scene.instantiate()
+    world_instance.name = "AUTHORED_REALISTIC_TOWN_AND_AIRFIELD"
+    world_instance.position = Vector3(0.0, 0.0, -28.0)
+    world_instance.scale = Vector3.ONE * 1.55
+    add_child(world_instance)
+    _add_static_collisions(world_instance)
+
+    # Supplemental authored military props; no primitive buildings or cube props.
+    _place_prop("res://assets/ironline/models/props/old_military_crate/old_military_crate.glb", Vector3(-8,0.0,-27), 1.25, 0.4)
+    _place_prop("res://assets/ironline/models/props/ammo_box/ammo_box.glb", Vector3(-6,0.0,-28), 1.0, -0.2)
+    _place_prop("res://assets/ironline/models/props/portable_generator/portable_generator.glb", Vector3(8,0.0,-35), 1.0, 1.2)
+    _place_prop("res://assets/ironline/models/props/metal_jerrycan_green/metal_jerrycan_green.glb", Vector3(9,0.0,-34), 0.9, 0.7)
+    _place_prop("res://assets/ironline/ambience/models/burnt_car/burnt_car.glb", Vector3(-24,0.0,-39), 1.0, 0.8)
+    _add_smoke(Vector3(-24,1.5,-39))
+
+func _add_static_collisions(root: Node) -> void:
+    for child in root.get_children():
+        if child is MeshInstance3D and child.mesh != null:
+            child.create_trimesh_collision()
+        _add_static_collisions(child)
+
 func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
-    player.position = Vector3(0,1.2,5)
+    player.position = Vector3(0,1.2,-30)
     add_child(player)
     player.fired.connect(_on_player_fired)
 func _spawn_enemy(pos: Vector3) -> void:
