@@ -70,7 +70,7 @@ func _unhandled_input(event: InputEvent) -> void:
                 move_vector = Vector2.ZERO
     elif event is InputEventScreenDrag:
         if event.index == look_touch:
-            var d := event.position - last_touch
+            var d: Vector2 = event.position - last_touch
             rotate_y(-d.x * 0.004)
             pitch = clampf(pitch - d.y * 0.004, -1.45, 1.45)
             camera.rotation.x = pitch
