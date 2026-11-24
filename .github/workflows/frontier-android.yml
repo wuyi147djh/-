@@ -32,7 +32,7 @@ jobs:
           unzip -oq /tmp/godot-4.3-templates.tpz -d /tmp/godot-templates
           test -d /tmp/godot-templates/templates
           cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
-          printf '4.3.stable\\n' > "$TEMPLATE_DIR/version.txt"
+          printf '%s\n' '4.3.stable' > "$TEMPLATE_DIR/version.txt"
           test -s "$TEMPLATE_DIR/android_debug.apk"
           test -s "$TEMPLATE_DIR/android_release.apk"
           ANDROID_SDK_PATH="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/lib/android-sdk}}"
@@ -41,7 +41,13 @@ jobs:
           test -d "$ANDROID_SDK_PATH/platforms"
           test -x "$JAVA_SDK_PATH/bin/java"
           "$JAVA_SDK_PATH/bin/java" -version
-          printf '[gd_resource type="EditorSettings" format=3]\\n\\n[resource]\\nexport/android/android_sdk_path = "%s"\\nexport/android/java_sdk_path = "%s"\\n' "$ANDROID_SDK_PATH" "$JAVA_SDK_PATH" > "$CONFIG_DIR/editor_settings-4.3.tres"
+          cat > "$CONFIG_DIR/editor_settings-4.3.tres" <<EOF
+[gd_resource type="EditorSettings" format=3]
+
+[resource]
+export/android/android_sdk_path = "$ANDROID_SDK_PATH"
+export/android/java_sdk_path = "$JAVA_SDK_PATH"
+EOF
           cat "$CONFIG_DIR/editor_settings-4.3.tres"
 
       - name: Validate and import Godot project
@@ -60,7 +66,7 @@ jobs:
           mkdir -p build
           godot --headless --verbose --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
           test -s build/PROJECT_FRONTIER.apk
-          unzip -l build/PROJECT_FRONTIER.apk | grep -E 'lib/arm64-v8a/.*\\.so'
+          unzip -l build/PROJECT_FRONTIER.apk | grep -E 'lib/arm64-v8a/.*[.]so'
           sha256sum build/PROJECT_FRONTIER.apk
 
       - name: Upload APK
