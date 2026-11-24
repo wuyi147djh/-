@@ -92,6 +92,18 @@ jobs:
           grep -q '^gradle_build/use_gradle_build=false$' export_presets.cfg
           godot --headless --editor --path . --quit
 
+      - name: Capture real Godot gameplay frame (not AI-generated)
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri libegl1-mesa
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
+          mkdir -p build
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a godot --path . --rendering-method gl_compatibility --resolution 1280x720 --quit-after 420 -- --capture-gameplay
+          test -s build/PROJECT_FRONTIER-runtime.png
+          file build/PROJECT_FRONTIER-runtime.png
+
       - name: Export Android ARM64 APK
         shell: bash
         run: |
@@ -107,6 +119,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PROJECT_FRONTIER-Android-ARM64-debug
-          path: PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk
+          path: |\n            PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk\n            PROJECT_FRONTIER/build/PROJECT_FRONTIER-runtime.png
           if-no-files-found: error
           retention-days: 7
