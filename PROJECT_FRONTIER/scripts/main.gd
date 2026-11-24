@@ -61,6 +61,12 @@ func _build_world() -> void:
         if abs(x)>10:
             var sz := Vector3(randf_range(7,13),randf_range(4,8),randf_range(7,12))
             _box("Abandoned structure", Vector3(x,sz.y/2,z), sz, Color(0.28,0.27,0.23), true)
+    _place_prop("res://assets/ironline/models/props/old_military_crate/old_military_crate.glb", Vector3(-7,0.1,-28), 1.4, 0.4)
+    _place_prop("res://assets/ironline/models/props/ammo_box/ammo_box.glb", Vector3(-5,0.1,-29), 1.0, -0.2)
+    _place_prop("res://assets/ironline/models/props/portable_generator/portable_generator.glb", Vector3(7,0.1,-38), 1.0, 1.2)
+    _place_prop("res://assets/ironline/models/props/metal_jerrycan_green/metal_jerrycan_green.glb", Vector3(8,0.1,-37), 0.9, 0.7)
+    _place_prop("res://assets/ironline/models/props/concrete_road_barrier/concrete_road_barrier.glb", Vector3(-9,0.1,-46), 1.0, 0.0)
+    _place_prop("res://assets/ironline/models/props/covered_car/covered_car.glb", Vector3(18,0.1,-66), 1.0, -1.0)
     for i in range(230):
         var x := randf_range(-82,82)
         var z := randf_range(-138,28)
@@ -85,23 +91,24 @@ func _spawn_enemy(pos: Vector3) -> void:
     cap.height = 1.8
     col.shape = cap
     e.add_child(col)
-    var body := MeshInstance3D.new()
-    var mesh := CapsuleMesh.new()
-    mesh.radius = 0.42
-    mesh.height = 1.8
-    body.mesh = mesh
-    body.position.y = 0.9
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.20,0.24,0.19)
-    mat.roughness = 0.92
-    body.material_override = mat
-    e.add_child(body)
-    var head := MeshInstance3D.new()
-    head.mesh = SphereMesh.new()
-    head.scale = Vector3(0.75,0.75,0.75)
-    head.position.y = 1.85
-    head.material_override = mat
-    e.add_child(head)
+    var soldier_path := "res://assets/ironline/models/characters/soldier_tac.glb"
+    if ResourceLoader.exists(soldier_path):
+        var soldier_scene := load(soldier_path) as PackedScene
+        if soldier_scene:
+            var soldier := soldier_scene.instantiate()
+            soldier.position.y = -0.9
+            e.add_child(soldier)
+    else:
+        var body := MeshInstance3D.new()
+        var mesh := CapsuleMesh.new()
+        mesh.radius = 0.42
+        mesh.height = 1.8
+        body.mesh = mesh
+        body.position.y = 0.9
+        var mat := StandardMaterial3D.new()
+        mat.albedo_color = Color(0.12,0.16,0.13)
+        body.material_override = mat
+        e.add_child(body)
     var ai := GDScript.new()
     ai.source_code = "extends CharacterBody3D\nvar hp=100.0\nvar target: Node3D\nvar attack_cd=0.0\nfunc _physics_process(d):\n if not is_instance_valid(target): return\n var v=target.global_position-global_position; v.y=0\n if v.length()>7.0: velocity=v.normalized()*2.1\n else: velocity=Vector3.ZERO\n if v.length()>0.2: look_at(global_position+v,Vector3.UP)\n velocity.y-=24.0*d; move_and_slide()\n attack_cd-=d\n if v.length()<2.3 and attack_cd<=0: attack_cd=1.2; target.take_damage(8)\nfunc hit(dmg):\n hp-=dmg\n if hp<=0: queue_free()\n"
     e.set_script(ai)
@@ -177,6 +184,43 @@ func _reload() -> void:
 func _update_ammo() -> void:
     var l:=hud.get_node_or_null("Control/Ammo")
     if l: l.text="%02d / %03d" % [ammo,reserve]
+
+func _surface_material(surface_name: String, tint: Color) -> StandardMaterial3D:
+    var m := StandardMaterial3D.new()
+    m.albedo_color = tint
+    m.roughness = 0.88
+    var key := ""
+    if surface_name == "Terrain":
+        key = "Ground110"
+    elif surface_name == "Highway" or surface_name == "Road marking":
+        key = "Asphalt031"
+    elif surface_name.find("Bunker") >= 0 or surface_name.find("structure") >= 0:
+        key = "Concrete047A"
+    elif surface_name.find("Rock") >= 0:
+        key = "Concrete034"
+    var base := "res://assets/ironline/textures/" + key + "/"
+    if key != "" and ResourceLoader.exists(base + "Color.webp"):
+        m.albedo_texture = load(base + "Color.webp")
+        if ResourceLoader.exists(base + "NormalGL.webp"):
+            m.normal_enabled = true
+            m.normal_texture = load(base + "NormalGL.webp")
+            m.normal_scale = 0.7
+        if ResourceLoader.exists(base + "Roughness.webp"):
+            m.roughness_texture = load(base + "Roughness.webp")
+    return m
+
+func _place_prop(asset_path: String, pos: Vector3, scale_factor: float = 1.0, yaw: float = 0.0) -> void:
+    if not ResourceLoader.exists(asset_path):
+        return
+    var packed := load(asset_path) as PackedScene
+    if packed == null:
+        return
+    var instance := packed.instantiate()
+    instance.position = pos
+    instance.rotation.y = yaw
+    instance.scale = Vector3.ONE * scale_factor
+    add_child(instance)
+
 func _box(n: String,p: Vector3,s: Vector3,c: Color,collide: bool) -> void:
     var b: StaticBody3D=StaticBody3D.new() if collide else StaticBody3D.new()
     b.name=n
@@ -185,10 +229,7 @@ func _box(n: String,p: Vector3,s: Vector3,c: Color,collide: bool) -> void:
     var bm:=BoxMesh.new()
     bm.size=s
     mi.mesh=bm
-    var m:=StandardMaterial3D.new()
-    m.albedo_color=c
-    m.roughness=0.9
-    mi.material_override=m
+    mi.material_override=_surface_material(n,c)
     b.add_child(mi)
     if collide:
         var cs:=CollisionShape3D.new()
