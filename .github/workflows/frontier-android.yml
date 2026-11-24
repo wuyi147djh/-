@@ -17,18 +17,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Godot Android export environment
+        shell: bash
         run: |
+          set -euxo pipefail
           apt-get update
           apt-get install -y --no-install-recommends curl unzip ca-certificates
-          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable" "$HOME/.config/godot"
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.3.stable"
+          CONFIG_DIR="$HOME/.config/godot"
+          mkdir -p "$TEMPLATE_DIR" "$CONFIG_DIR"
           curl -fL --retry 3 --retry-delay 2 "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz" -o /tmp/godot-4.3-templates.tpz
           mkdir -p /tmp/godot-templates
           unzip -oq /tmp/godot-4.3-templates.tpz -d /tmp/godot-templates
-          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.3.stable/"
-          printf '4.3.stable\n' > "$HOME/.local/share/godot/export_templates/4.3.stable/version.txt"
-          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_source.zip"
-          touch "$HOME/.config/godot/editor_settings-4.3.tres"
-          grep -q 'export/android/java_sdk_path' "$HOME/.config/godot/editor_settings-4.3.tres" || echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> "$HOME/.config/godot/editor_settings-4.3.tres"
+          test -d /tmp/godot-templates/templates
+          cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
+          printf '4.3.stable\\n' > "$TEMPLATE_DIR/version.txt"
+          test -s "$TEMPLATE_DIR/android_source.zip"
+          test -s "$TEMPLATE_DIR/android_debug.apk"
+          test -s "$TEMPLATE_DIR/android_release.apk"
+          ANDROID_SDK_PATH="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
+          JAVA_SDK_PATH="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
+          if [ ! -d "$ANDROID_SDK_PATH/platform-tools" ]; then
+            for candidate in /opt/android-sdk /usr/lib/android-sdk /usr/local/lib/android/sdk; do
+              if [ -d "$candidate/platform-tools" ]; then ANDROID_SDK_PATH="$candidate"; break; fi
+            done
+          fi
+          test -d "$ANDROID_SDK_PATH/platform-tools"
+          test -d "$ANDROID_SDK_PATH/platforms"
+          test -x "$JAVA_SDK_PATH/bin/java"
+          "$JAVA_SDK_PATH/bin/java" -version
+          printf '[gd_resource type="EditorSettings" format=3]\\n\\n[resource]\\nexport/android/android_sdk_path = "%s"\\nexport/android/java_sdk_path = "%s"\\n' "$ANDROID_SDK_PATH" "$JAVA_SDK_PATH" > "$CONFIG_DIR/editor_settings-4.3.tres"
+          cat "$CONFIG_DIR/editor_settings-4.3.tres"
       - name: Prepare Android signing key
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
