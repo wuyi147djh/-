@@ -18,16 +18,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Godot Android export environment
         run: |
-          mkdir -p ~/.local/share/godot/export_templates/ ~/.config/
-          if [ -d /root/.config/godot ]; then
-            cp -a /root/.config/godot ~/.config/godot
-          fi
-          if [ -d /root/.local/share/godot/export_templates/4.3.stable ]; then
-            cp -a /root/.local/share/godot/export_templates/4.3.stable ~/.local/share/godot/export_templates/
-          fi
-          mkdir -p ~/.config/godot
-          touch ~/.config/godot/editor_settings-4.3.tres
-          grep -q 'export/android/java_sdk_path' ~/.config/godot/editor_settings-4.3.tres || echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> ~/.config/godot/editor_settings-4.3.tres
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable" "$HOME/.config/godot"
+          curl -fL --retry 3 --retry-delay 2 "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz" -o /tmp/godot-4.3-templates.tpz
+          unzip -oq /tmp/godot-4.3-templates.tpz -d "$HOME/.local/share/godot/export_templates/4.3.stable"
+          printf '4.3.stable\n' > "$HOME/.local/share/godot/export_templates/4.3.stable/version.txt"
+          test -f "$HOME/.local/share/godot/export_templates/4.3.stable/android_source.zip"
+          touch "$HOME/.config/godot/editor_settings-4.3.tres"
+          grep -q 'export/android/java_sdk_path' "$HOME/.config/godot/editor_settings-4.3.tres" || echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> "$HOME/.config/godot/editor_settings-4.3.tres"
       - name: Prepare Android signing key
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
@@ -36,11 +33,17 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           godot --headless --editor --path . --quit
+      - name: Install Android build template
+        run: |
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
+          godot --headless --editor --path . --install-android-build-template --quit
+          test -f android/build.gradle
       - name: Export Android ARM64 APK
         run: |
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           mkdir -p build
           godot --headless --verbose --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
+          test -s build/PROJECT_FRONTIER.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
