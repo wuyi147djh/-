@@ -5,9 +5,10 @@ on:
       - 'PROJECT_FRONTIER/**'
       - '.github/workflows/frontier-android.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
-  actions: write
+
 jobs:
   android-arm64:
     runs-on: ubuntu-latest
@@ -16,7 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Godot Android export environment
+
+      - name: Prepare Godot Android export environment
         shell: bash
         run: |
           set -euxo pipefail
@@ -30,54 +32,37 @@ jobs:
           unzip -oq /tmp/godot-4.3-templates.tpz -d /tmp/godot-templates
           test -d /tmp/godot-templates/templates
           cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
-          printf '4.3.stable\n' > "$TEMPLATE_DIR/version.txt"
+          printf '4.3.stable\\n' > "$TEMPLATE_DIR/version.txt"
           test -s "$TEMPLATE_DIR/android_debug.apk"
           test -s "$TEMPLATE_DIR/android_release.apk"
-          ANDROID_SDK_PATH="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/opt/android-sdk}}"
+          ANDROID_SDK_PATH="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/lib/android-sdk}}"
           JAVA_SDK_PATH="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
-          if [ ! -d "$ANDROID_SDK_PATH/platform-tools" ]; then
-            for candidate in /opt/android-sdk /usr/lib/android-sdk /usr/local/lib/android/sdk; do
-              if [ -d "$candidate/platform-tools" ]; then ANDROID_SDK_PATH="$candidate"; break; fi
-            done
-          fi
           test -d "$ANDROID_SDK_PATH/platform-tools"
           test -d "$ANDROID_SDK_PATH/platforms"
           test -x "$JAVA_SDK_PATH/bin/java"
           "$JAVA_SDK_PATH/bin/java" -version
-          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' "$ANDROID_SDK_PATH" "$JAVA_SDK_PATH" > "$CONFIG_DIR/editor_settings-4.3.tres"
+          printf '[gd_resource type="EditorSettings" format=3]\\n\\n[resource]\\nexport/android/android_sdk_path = "%s"\\nexport/android/java_sdk_path = "%s"\\n' "$ANDROID_SDK_PATH" "$JAVA_SDK_PATH" > "$CONFIG_DIR/editor_settings-4.3.tres"
           cat "$CONFIG_DIR/editor_settings-4.3.tres"
-      - name: Prepare Android signing key
+
+      - name: Validate and import Godot project
+        shell: bash
         run: |
+          set -euxo pipefail
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
-          keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-      - name: Import project
-        run: |
-          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
+          grep -q '^gradle_build/use_gradle_build=false$' export_presets.cfg
           godot --headless --editor --path . --quit
-      - name: Verify export preset uses prebuilt Android templates
-        run: |
-          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
-          grep -q '^gradle_build/use_gradle_build=false      - name: Export Android ARM64 APK
-        run: |
-          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
-          mkdir -p build
-          godot --headless --verbose --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
-          test -s build/PROJECT_FRONTIER.apk
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: PROJECT_FRONTIER-Android-ARM64-debug
-          path: PROJECT_FRONTIER/build/PROJECT_FRONTIER.apk
-          if-no-files-found: error
-          retention-days: 7
- export_presets.cfg
-          test -s "$HOME/.local/share/godot/export_templates/4.3.stable/android_debug.apk"
+
       - name: Export Android ARM64 APK
+        shell: bash
         run: |
+          set -euxo pipefail
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           mkdir -p build
           godot --headless --verbose --path . --export-debug "Android" build/PROJECT_FRONTIER.apk
           test -s build/PROJECT_FRONTIER.apk
+          unzip -l build/PROJECT_FRONTIER.apk | grep -E 'lib/arm64-v8a/.*\\.so'
+          sha256sum build/PROJECT_FRONTIER.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
