@@ -30,7 +30,7 @@ jobs:
           unzip -oq /tmp/godot-4.3-templates.tpz -d /tmp/godot-templates
           test -d /tmp/godot-templates/templates
           cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
-          printf '4.3.stable\\n' > "$TEMPLATE_DIR/version.txt"
+          printf '4.3.stable\n' > "$TEMPLATE_DIR/version.txt"
           test -s "$TEMPLATE_DIR/android_source.zip"
           test -s "$TEMPLATE_DIR/android_debug.apk"
           test -s "$TEMPLATE_DIR/android_release.apk"
@@ -45,7 +45,7 @@ jobs:
           test -d "$ANDROID_SDK_PATH/platforms"
           test -x "$JAVA_SDK_PATH/bin/java"
           "$JAVA_SDK_PATH/bin/java" -version
-          printf '[gd_resource type="EditorSettings" format=3]\\n\\n[resource]\\nexport/android/android_sdk_path = "%s"\\nexport/android/java_sdk_path = "%s"\\n' "$ANDROID_SDK_PATH" "$JAVA_SDK_PATH" > "$CONFIG_DIR/editor_settings-4.3.tres"
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' "$ANDROID_SDK_PATH" "$JAVA_SDK_PATH" > "$CONFIG_DIR/editor_settings-4.3.tres"
           cat "$CONFIG_DIR/editor_settings-4.3.tres"
       - name: Prepare Android signing key
         run: |
