@@ -21,12 +21,19 @@ func _build_world() -> void:
     var env := Environment.new()
     env.background_mode = Environment.BG_SKY
     var sky := Sky.new()
-    var sm := ProceduralSkyMaterial.new()
-    sm.sky_top_color = Color(0.10, 0.20, 0.30)
-    sm.sky_horizon_color = Color(0.55, 0.60, 0.58)
-    sm.ground_bottom_color = Color(0.07, 0.08, 0.07)
-    sm.ground_horizon_color = Color(0.28, 0.30, 0.27)
-    sky.sky_material = sm
+    var hdr_path := "res://assets/ironline/hdr/bambanani_sunset_2k.hdr"
+    if ResourceLoader.exists(hdr_path):
+        var panorama := PanoramaSkyMaterial.new()
+        panorama.panorama = load(hdr_path)
+        panorama.energy_multiplier = 0.72
+        sky.sky_material = panorama
+    else:
+        var sm := ProceduralSkyMaterial.new()
+        sm.sky_top_color = Color(0.10, 0.20, 0.30)
+        sm.sky_horizon_color = Color(0.55, 0.60, 0.58)
+        sm.ground_bottom_color = Color(0.07, 0.08, 0.07)
+        sm.ground_horizon_color = Color(0.28, 0.30, 0.27)
+        sky.sky_material = sm
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color(0.48, 0.52, 0.58)
@@ -67,15 +74,16 @@ func _build_world() -> void:
     _place_prop("res://assets/ironline/models/props/metal_jerrycan_green/metal_jerrycan_green.glb", Vector3(8,0.1,-37), 0.9, 0.7)
     _place_prop("res://assets/ironline/models/props/concrete_road_barrier/concrete_road_barrier.glb", Vector3(-9,0.1,-46), 1.0, 0.0)
     _place_prop("res://assets/ironline/models/props/covered_car/covered_car.glb", Vector3(18,0.1,-66), 1.0, -1.0)
-    for i in range(230):
-        var x := randf_range(-82,82)
-        var z := randf_range(-138,28)
-        if abs(x)<9 or (x>34 and x<59): continue
-        var th := randf_range(3.5,6.5)
-        _cylinder(Vector3(x,th/2,z),randf_range(0.18,0.32),th,Color(0.20,0.15,0.10))
-        _cone(Vector3(x,th+2.1,z),randf_range(1.3,2.3),randf_range(4.5,6.5),Color(0.09,randf_range(0.19,0.25),0.15))
-    for i in range(70):
-        _box("Rock",Vector3(randf_range(-70,70),0.5,randf_range(-130,25)),Vector3(randf_range(0.8,3.5),randf_range(0.7,2.5),randf_range(0.8,3.0)),Color(0.25,0.27,0.25),false)
+    # Replace cone-tree and cube-rock placeholders with authored military assets.
+    _place_prop("res://assets/ironline/ambience/models/uh60/uh60.glb", Vector3(27,0.25,-88), 1.0, -0.7)
+    _place_prop("res://assets/ironline/ambience/models/burnt_car/burnt_car.glb", Vector3(-31,0.05,-55), 1.0, 0.8)
+    _place_prop("res://assets/ironline/models/props/barrel_03/barrel_03.glb", Vector3(-11,0.1,-43), 1.0, 0.3)
+    _place_prop("res://assets/ironline/models/props/old_tyre/old_tyre.glb", Vector3(-13,0.1,-44), 1.0, 0.9)
+    _place_prop("res://assets/ironline/models/props/security_light/security_light.glb", Vector3(-26,0.1,-73), 1.0, 0.0)
+    _place_prop("res://assets/ironline/models/props/street_lamp_02/street_lamp_02.glb", Vector3(13,0.1,-58), 1.0, 0.0)
+    _place_prop("res://assets/ironline/models/props/utility_box_01/utility_box_01.glb", Vector3(-22,0.1,-78), 1.0, 0.0)
+    _place_prop("res://assets/ironline/models/props/modular_industrial_pipes_01/modular_industrial_pipes_01.glb", Vector3(-28,0.1,-79), 1.0, 0.0)
+    _add_smoke(Vector3(-31,1.5,-55))
 func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
@@ -98,17 +106,16 @@ func _spawn_enemy(pos: Vector3) -> void:
             var soldier := soldier_scene.instantiate()
             soldier.position.y = -0.9
             e.add_child(soldier)
+            for anim_node in soldier.find_children("*", "AnimationPlayer", true, false):
+                var clips: PackedStringArray = anim_node.get_animation_list()
+                for preferred in ["run", "Run", "rifle_run", "walk", "Walk", "idle", "Idle"]:
+                    if clips.has(preferred):
+                        anim_node.play(preferred)
+                        break
     else:
-        var body := MeshInstance3D.new()
-        var mesh := CapsuleMesh.new()
-        mesh.radius = 0.42
-        mesh.height = 1.8
-        body.mesh = mesh
-        body.position.y = 0.9
-        var mat := StandardMaterial3D.new()
-        mat.albedo_color = Color(0.12,0.16,0.13)
-        body.material_override = mat
-        e.add_child(body)
+        push_error("Required soldier_tac.glb missing: refusing to spawn a low-detail placeholder enemy.")
+        e.queue_free()
+        return
     var ai := GDScript.new()
     ai.source_code = "extends CharacterBody3D\nvar hp=100.0\nvar target: Node3D\nvar attack_cd=0.0\nfunc _physics_process(d):\n if not is_instance_valid(target): return\n var v=target.global_position-global_position; v.y=0\n if v.length()>7.0: velocity=v.normalized()*2.1\n else: velocity=Vector3.ZERO\n if v.length()>0.2: look_at(global_position+v,Vector3.UP)\n velocity.y-=24.0*d; move_and_slide()\n attack_cd-=d\n if v.length()<2.3 and attack_cd<=0: attack_cd=1.2; target.take_damage(8)\nfunc hit(dmg):\n hp-=dmg\n if hp<=0: queue_free()\n"
     e.set_script(ai)
@@ -267,3 +274,32 @@ func _cone(p: Vector3,r: float,h: float,c: Color) -> void:
     mat.roughness=0.95
     mi.material_override=mat
     add_child(mi)
+
+
+func _add_smoke(pos: Vector3) -> void:
+    var smoke := GPUParticles3D.new()
+    smoke.position = pos
+    smoke.amount = 48
+    smoke.lifetime = 5.5
+    smoke.emitting = true
+    smoke.visibility_aabb = AABB(Vector3(-8,-2,-8), Vector3(16,18,16))
+    var process := ParticleProcessMaterial.new()
+    process.direction = Vector3(0.0, 1.0, 0.0)
+    process.spread = 18.0
+    process.initial_velocity_min = 0.8
+    process.initial_velocity_max = 2.2
+    process.gravity = Vector3(0, 0.15, 0)
+    process.scale_min = 1.0
+    process.scale_max = 2.8
+    process.color = Color(0.16, 0.17, 0.16, 0.42)
+    smoke.process_material = process
+    var puff := SphereMesh.new()
+    puff.radius = 0.65
+    puff.height = 1.3
+    var mat := StandardMaterial3D.new()
+    mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.albedo_color = Color(0.18, 0.19, 0.18, 0.32)
+    puff.material = mat
+    smoke.draw_pass_1 = puff
+    add_child(smoke)
