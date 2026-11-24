@@ -33,7 +33,12 @@ jobs:
           cp -a public/assets/ambience "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/"
           test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/models/characters/soldier_tac.glb"
           test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/models/fp/m4a1.glb"
-          echo "Imported licensed source assets into Godot project."
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/ambience/models/uh60/uh60.glb"
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/ambience/models/burnt_car/burnt_car.glb"
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/hdr/bambanani_sunset_2k.hdr"
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/models/props/security_light/security_light.glb"
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/models/props/modular_industrial_pipes_01/modular_industrial_pipes_01.glb"
+          echo "Required soldier, weapon, helicopter, wreck, HDR and military prop assets verified."
           du -sh "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline"
 
       - name: Prepare Godot Android export environment
