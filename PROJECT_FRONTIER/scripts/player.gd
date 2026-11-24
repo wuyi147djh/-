@@ -25,17 +25,21 @@ func _ready() -> void:
     camera.current = true
     camera.fov = 82
     add_child(camera)
-    var gun := MeshInstance3D.new()
-    var gm := BoxMesh.new()
-    gm.size = Vector3(0.16, 0.16, 0.72)
-    gun.mesh = gm
-    gun.position = Vector3(0.28, -0.24, -0.58)
-    var mat := StandardMaterial3D.new()
-    mat.albedo_color = Color(0.075, 0.085, 0.078)
-    mat.metallic = 0.72
-    mat.roughness = 0.34
-    gun.material_override = mat
-    camera.add_child(gun)
+    var weapon_path := "res://assets/ironline/models/fp/m4a1.glb"
+    if ResourceLoader.exists(weapon_path):
+        var weapon_scene := load(weapon_path) as PackedScene
+        if weapon_scene:
+            var weapon := weapon_scene.instantiate()
+            weapon.position = Vector3(0.28, -0.24, -0.58)
+            weapon.scale = Vector3.ONE * 0.8
+            camera.add_child(weapon)
+    else:
+        var gun := MeshInstance3D.new()
+        var gm := BoxMesh.new()
+        gm.size = Vector3(0.16, 0.16, 0.72)
+        gun.mesh = gm
+        gun.position = Vector3(0.28, -0.24, -0.58)
+        camera.add_child(gun)
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 func _physics_process(delta: float) -> void:
     fire_cd = maxf(0, fire_cd - delta)
