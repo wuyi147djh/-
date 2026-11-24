@@ -39,7 +39,12 @@ jobs:
           test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/models/props/security_light/security_light.glb"
           test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline/models/props/modular_industrial_pipes_01/modular_industrial_pipes_01.glb"
           echo "Required soldier, weapon, helicopter, wreck, HDR and military prop assets verified."
-          du -sh "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/ironline"
+          mkdir -p "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world"
+          curl -fL --retry 4 --retry-delay 2 "https://cdn.3dassets.dev/assets/28276/v1/model.glb" -o "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/battle_royale_town_airfield.glb"
+          test -s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/battle_royale_town_airfield.glb"
+          test "$(stat -c%s "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets/world/battle_royale_town_airfield.glb")" -gt 5000000
+          echo "Verified CC0 470k-triangle complete town and airfield environment."
+          du -sh "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets"
 
       - name: Prepare Godot Android export environment
         shell: bash
