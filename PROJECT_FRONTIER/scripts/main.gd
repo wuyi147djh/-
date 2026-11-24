@@ -3,6 +3,10 @@ const PLAYER_SCRIPT = preload("res://scripts/player.gd")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var status_label: Label
+var mission_label: Label
+var health_label: Label
+var player_audio: AudioStreamPlayer
+var reload_audio: AudioStreamPlayer
 var enemies: Array[Node3D] = []
 var ammo := 30
 var reserve := 180
@@ -11,11 +15,23 @@ func _ready() -> void:
     _build_world()
     _spawn_player()
     _build_hud()
+    player_audio = AudioStreamPlayer.new()
+    var shot_path := "res://assets/ironline/audio/guns/m4a1_player_near.ogg"
+    if ResourceLoader.exists(shot_path):
+        player_audio.stream = load(shot_path)
+    add_child(player_audio)
+    reload_audio = AudioStreamPlayer.new()
+    var reload_path := "res://assets/ironline/audio/foley/rifle_magin.ogg"
+    if ResourceLoader.exists(reload_path):
+        reload_audio.stream = load(reload_path)
+    add_child(reload_audio)
     for i in range(9):
         _spawn_enemy(Vector3(randf_range(-48, 48), 1.0, randf_range(-85, -20)))
 func _process(delta: float) -> void:
     mission_time += delta
     status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   %02d:%02d" % [enemies.size(), int(mission_time) / 60, int(mission_time) % 60]
+    mission_label.text = "PRIMARY OBJECTIVE: SECURE THE OUTPOST" if enemies.size() > 0 else "OUTPOST SECURED  —  MOVE TO EXTRACTION"
+    health_label.text = "VITALS  %03d" % player.health
 func _build_world() -> void:
     var we := WorldEnvironment.new()
     var env := Environment.new()
@@ -114,15 +130,18 @@ func _spawn_enemy(pos: Vector3) -> void:
         e.queue_free()
         return
     var ai := GDScript.new()
-    ai.source_code = "extends CharacterBody3D\nvar hp=100.0\nvar target: Node3D\nvar attack_cd=0.0\nfunc _physics_process(d):\n if not is_instance_valid(target): return\n var v=target.global_position-global_position; v.y=0\n if v.length()>7.0: velocity=v.normalized()*2.1\n else: velocity=Vector3.ZERO\n if v.length()>0.2: look_at(global_position+v,Vector3.UP)\n velocity.y-=24.0*d; move_and_slide()\n attack_cd-=d\n if v.length()<2.3 and attack_cd<=0: attack_cd=1.2; target.take_damage(8)\nfunc hit(dmg):\n hp-=dmg\n if hp<=0: queue_free()\n"
+    ai.source_code = "extends CharacterBody3D\nvar hp=100.0\nvar target: Node3D\nvar game: Node\nvar attack_cd=0.0\nfunc _physics_process(d):\n if not is_instance_valid(target): return\n var v=target.global_position-global_position; v.y=0\n if v.length()>13.0: velocity=v.normalized()*2.7\n else: velocity=Vector3.ZERO\n if v.length()>0.2: look_at(global_position+v,Vector3.UP)\n velocity.y-=24.0*d; move_and_slide()\n attack_cd-=d\n if v.length()<32.0 and attack_cd<=0: attack_cd=1.35; target.take_damage(5); if is_instance_valid(game): game._enemy_shot(global_position)\nfunc hit(dmg):\n hp-=dmg\n if hp<=0: queue_free()\n"
     e.set_script(ai)
     e.set("target",player)
+    e.set("game",self)
     add_child(e)
     enemies.append(e)
     e.tree_exited.connect(func(): enemies.erase(e))
 func _on_player_fired(origin: Vector3, direction: Vector3) -> void:
     if ammo<=0: return
     ammo-=1
+    if player_audio and player_audio.stream:
+        player_audio.play()
     var q := PhysicsRayQueryParameters3D.create(origin,origin+direction*160.0)
     q.exclude=[player]
     var hit := get_world_3d().direct_space_state.intersect_ray(q)
@@ -139,6 +158,17 @@ func _build_hud() -> void:
     status_label.add_theme_font_size_override("font_size",21)
     status_label.add_theme_color_override("font_color",Color(0.83,0.9,0.82))
     root.add_child(status_label)
+    mission_label = Label.new()
+    mission_label.position = Vector2(24, 48)
+    mission_label.add_theme_font_size_override("font_size", 17)
+    mission_label.add_theme_color_override("font_color", Color(0.95, 0.78, 0.42))
+    root.add_child(mission_label)
+    health_label = Label.new()
+    health_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    health_label.position = Vector2(-190, 20)
+    health_label.add_theme_font_size_override("font_size", 21)
+    health_label.add_theme_color_override("font_color", Color(0.82, 0.9, 0.82))
+    root.add_child(health_label)
     var cross:=Label.new()
     cross.text="+"
     cross.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
@@ -184,6 +214,8 @@ func _reload() -> void:
     var n: int=min(30-ammo,reserve)
     ammo+=n
     reserve-=n
+    if reload_audio and reload_audio.stream:
+        reload_audio.play()
     _update_ammo()
 func _update_ammo() -> void:
     var l:=hud.get_node_or_null("Control/Ammo")
@@ -350,3 +382,17 @@ func _build_mountain_range() -> void:
     mountain.material_override = rock_material
     mountain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     add_child(mountain)
+
+
+func _enemy_shot(pos: Vector3) -> void:
+    var path := "res://assets/ironline/audio/guns/ak74_enemy_distant.ogg"
+    if not ResourceLoader.exists(path):
+        return
+    var sound := AudioStreamPlayer3D.new()
+    sound.stream = load(path)
+    sound.unit_size = 12.0
+    sound.max_distance = 65.0
+    add_child(sound)
+    sound.global_position = pos
+    sound.play()
+    sound.finished.connect(sound.queue_free)
