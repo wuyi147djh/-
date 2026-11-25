@@ -97,7 +97,7 @@ jobs:
         run: |
           set -euxo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri libegl1-mesa
+          apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri libegl1-mesa file
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           mkdir -p build
           LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a godot --path . --rendering-method gl_compatibility --resolution 1280x720 --quit-after 420 -- --capture-gameplay
