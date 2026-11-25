@@ -70,6 +70,16 @@ jobs:
             gltf-transform dequantize "$asset" "$temp"
             test -s "$temp"
             mv "$temp" "$asset"
+            # Godot 4.3's GLTF path can silently drop EXT_texture_webp materials.
+            # Convert embedded WebP maps to lossless PNG at full source resolution.
+            if [[ "$asset" == "assets/world/tactical_hill_town_site_a.glb" ]]; then
+              png_temp="${asset%.glb}.png.glb"
+              gltf-transform png "$asset" "$png_temp" --quality 100 --effort 10
+              test -s "$png_temp"
+              mv "$png_temp" "$asset"
+              echo "Converted all town PBR textures to lossless PNG without resizing."
+              gltf-transform inspect "$asset"
+            fi
           done < <(find assets -type f -name '*.glb' -print0)
           echo "All GLB assets normalized for Godot 4.3."
       - name: Prepare Godot Android export environment
