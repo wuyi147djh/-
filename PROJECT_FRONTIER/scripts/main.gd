@@ -133,8 +133,8 @@ func _add_static_collisions(root: Node) -> void:
 func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
-    # Spawn at the documented south-side defender entrance, outside the arch geometry, facing north into the courtyard.
-    player.position = Vector3(0.0, 1.2, 20.6)
+    # Restore the proven courtyard-facing spawn used by build #62; keep the corrected lighting from build #64.
+    player.position = Vector3(0.0, 1.2, 10.2)
     player.rotation.y = 0.0
     add_child(player)
     player.fired.connect(_on_player_fired)
