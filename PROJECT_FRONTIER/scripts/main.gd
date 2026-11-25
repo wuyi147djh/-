@@ -32,11 +32,11 @@ func _ready() -> void:
     # Enemy squad is deliberately placed inside the playable objective courtyard,
     # not scattered across the old oversized terrain coordinates.
     var enemy_spawns: Array[Vector3] = [
-        Vector3(-8.0, 1.0, 8.0), Vector3(8.0, 1.0, 8.0),
-        Vector3(-12.0, 1.0, 2.0), Vector3(12.0, 1.0, 2.0),
-        Vector3(-6.0, 1.0, -4.0), Vector3(6.0, 1.0, -4.0),
-        Vector3(-2.0, 1.0, 12.0), Vector3(2.0, 1.0, -6.0),
-        Vector3(0.0, 1.0, 5.0)
+        Vector3(-10.0, 1.0, 4.0), Vector3(10.0, 1.0, 4.0),
+        Vector3(-14.0, 1.0, -2.0), Vector3(14.0, 1.0, -2.0),
+        Vector3(-6.0, 1.0, -8.0), Vector3(6.0, 1.0, -8.0),
+        Vector3(-2.0, 1.0, 10.0), Vector3(2.0, 1.0, -10.0),
+        Vector3(0.0, 1.0, 0.0)
     ]
     for spawn_point in enemy_spawns:
         _spawn_enemy(spawn_point)
@@ -113,12 +113,12 @@ func _build_world() -> void:
     _add_static_collisions(world_instance)
 
     # Supplemental authored military props; no primitive buildings or cube props.
-    _place_prop("res://assets/ironline/models/props/old_military_crate/old_military_crate.glb", Vector3(-8,0.0,-27), 1.25, 0.4)
-    _place_prop("res://assets/ironline/models/props/ammo_box/ammo_box.glb", Vector3(-6,0.0,-28), 1.0, -0.2)
-    _place_prop("res://assets/ironline/models/props/portable_generator/portable_generator.glb", Vector3(8,0.0,-35), 1.0, 1.2)
-    _place_prop("res://assets/ironline/models/props/metal_jerrycan_green/metal_jerrycan_green.glb", Vector3(9,0.0,-34), 0.9, 0.7)
-    _place_prop("res://assets/ironline/ambience/models/burnt_car/burnt_car.glb", Vector3(-24,0.0,-39), 1.0, 0.8)
-    _add_smoke(Vector3(-24,1.5,-39))
+    _place_prop("res://assets/ironline/models/props/old_military_crate/old_military_crate.glb", Vector3(-8,0.0,-12), 1.25, 0.4)
+    _place_prop("res://assets/ironline/models/props/ammo_box/ammo_box.glb", Vector3(-6,0.0,-12), 1.0, -0.2)
+    _place_prop("res://assets/ironline/models/props/portable_generator/portable_generator.glb", Vector3(8,0.0,-12), 1.0, 1.2)
+    _place_prop("res://assets/ironline/models/props/metal_jerrycan_green/metal_jerrycan_green.glb", Vector3(9,0.0,-11), 0.9, 0.7)
+    _place_prop("res://assets/ironline/ambience/models/burnt_car/burnt_car.glb", Vector3(-24,0.0,-10), 1.0, 0.8)
+    _add_smoke(Vector3(-24,1.5,-10))
 
 func _add_static_collisions(root: Node) -> void:
     for child in root.get_children():
@@ -130,7 +130,7 @@ func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
     # Spawn just outside the south entrance, facing into the objective square.
-    player.position = Vector3(0.0, 1.2, 20.5)
+    player.position = Vector3(0.0, 1.2, 13.5)
     add_child(player)
     player.fired.connect(_on_player_fired)
 func _spawn_enemy(pos: Vector3) -> void:
