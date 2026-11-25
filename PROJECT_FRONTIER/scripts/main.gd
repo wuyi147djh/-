@@ -6,6 +6,7 @@ var hud: CanvasLayer
 var status_label: Label
 var mission_label: Label
 var health_label: Label
+var health_bar: ProgressBar
 var player_audio: AudioStreamPlayer
 var reload_audio: AudioStreamPlayer
 var enemies: Array[Node3D] = []
@@ -57,6 +58,8 @@ func _process(delta: float) -> void:
     status_label.text = "OPERATION: IRON FRONTIER   |   HOSTILES %02d   |   KIA %02d   |   %02d:%02d" % [enemies.size(), kills, int(mission_time) / 60, int(mission_time) % 60]
     mission_label.text = "PRIMARY OBJECTIVE: SECURE THE OUTPOST" if enemies.size() > 0 else "OUTPOST SECURED  —  MOVE TO EXTRACTION"
     health_label.text = "VITALS  %03d" % player.health
+    if is_instance_valid(health_bar):
+        health_bar.value = player.health
     if is_instance_valid(kills_label):
         kills_label.text = "CONFIRMED KILLS  %02d / 09" % kills
 func _build_world() -> void:
@@ -245,6 +248,30 @@ func _build_hud() -> void:
     health_label.add_theme_font_size_override("font_size", 21)
     health_label.add_theme_color_override("font_color", Color(0.82, 0.9, 0.82))
     root.add_child(health_label)
+    health_bar = ProgressBar.new()
+    health_bar.min_value = 0
+    health_bar.max_value = 100
+    health_bar.value = 100
+    health_bar.show_percentage = false
+    health_bar.custom_minimum_size = Vector2(180, 18)
+    health_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    health_bar.position = Vector2(-190, 52)
+    health_bar.size = Vector2(170, 16)
+    var health_fill := StyleBoxFlat.new()
+    health_fill.bg_color = Color(0.72, 0.16, 0.12, 0.95)
+    health_fill.corner_radius_top_left = 3
+    health_fill.corner_radius_top_right = 3
+    health_fill.corner_radius_bottom_left = 3
+    health_fill.corner_radius_bottom_right = 3
+    health_bar.add_theme_stylebox_override("fill", health_fill)
+    var health_track := StyleBoxFlat.new()
+    health_track.bg_color = Color(0.06, 0.08, 0.08, 0.82)
+    health_track.corner_radius_top_left = 3
+    health_track.corner_radius_top_right = 3
+    health_track.corner_radius_bottom_left = 3
+    health_track.corner_radius_bottom_right = 3
+    health_bar.add_theme_stylebox_override("background", health_track)
+    root.add_child(health_bar)
     kills_label = Label.new()
     kills_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
     kills_label.position = Vector2(-250, 52)
