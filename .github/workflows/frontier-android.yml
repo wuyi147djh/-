@@ -52,6 +52,23 @@ jobs:
           echo "Verified tactical objective map: roofed buildings, courtyard, fountain, crates, sandbags and defenders (CC0 pack)."
           du -sh "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets"
 
+      - name: Normalize compressed GLB assets for Godot 4.3
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends nodejs npm
+          npm install --global @gltf-transform/cli
+          cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
+          # Decode meshopt-compressed geometry and remove KHR_mesh_quantization
+          # before Godot 4.3's importer sees the assets.
+          while IFS= read -r -d '' asset; do
+            temp="${asset%.glb}.godot43.glb"
+            gltf-transform dequantize "$asset" "$temp"
+            test -s "$temp"
+            mv "$temp" "$asset"
+          done < <(find assets -type f -name '*.glb' -print0)
+          echo "All GLB assets normalized for Godot 4.3."
       - name: Prepare Godot Android export environment
         shell: bash
         run: |
