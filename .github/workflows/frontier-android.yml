@@ -52,13 +52,15 @@ jobs:
           echo "Verified tactical objective map: roofed buildings, courtyard, fountain, crates, sandbags and defenders (CC0 pack)."
           du -sh "$GITHUB_WORKSPACE/PROJECT_FRONTIER/assets"
 
+      - name: Set up Node.js for glTF conversion
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Normalize compressed GLB assets for Godot 4.3
         shell: bash
         run: |
           set -euxo pipefail
-          apt-get update
-          apt-get install -y --no-install-recommends nodejs npm
-          npm install --global @gltf-transform/cli
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           # Decode meshopt-compressed geometry and remove KHR_mesh_quantization
           # before Godot 4.3's importer sees the assets.
