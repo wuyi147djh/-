@@ -306,32 +306,37 @@ func _build_hud() -> void:
     _build_virtual_joystick(root)
 
 func _build_virtual_joystick(root: Control) -> void:
-    # The player already reads left-side touch drags. This visible stick shows
-    # the touch zone and its live displacement instead of leaving movement invisible.
-    var stick := Control.new()
-    stick.name = "MovementJoystick"
-    stick.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-    stick.position = Vector2(34, -188)
-    stick.size = Vector2(154, 154)
-    stick.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    var visual := GDScript.new()
-    visual.source_code = """extends Control
-var actor: Node
-func _process(_delta):
-    queue_redraw()
-func _draw():
-    var center = size * 0.5
-    draw_circle(center, 68.0, Color(0.05, 0.08, 0.08, 0.42))
-    draw_arc(center, 68.0, 0.0, TAU, 64, Color(0.78, 0.86, 0.80, 0.78), 3.0, true)
-    var offset = Vector2.ZERO
-    if is_instance_valid(actor):
-        offset = actor.move_vector * 34.0
-    draw_circle(center + offset, 29.0, Color(0.72, 0.82, 0.75, 0.68))
-    draw_arc(center + offset, 29.0, 0.0, TAU, 48, Color(0.94, 0.97, 0.92, 0.9), 2.0, true)
-"""
-    stick.set_script(visual)
-    stick.set("actor", player)
-    root.add_child(stick)
+    # Use native themed Controls rather than a runtime-generated drawing script.
+    # The left-side touch region remains pass-through so Player._unhandled_input
+    # receives the drag and updates move_vector.
+    var base := Panel.new()
+    base.name = "MovementJoystick"
+    base.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+    base.position = Vector2(34, -196)
+    base.size = Vector2(164, 164)
+    base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    base.z_index = 30
+    var base_style := StyleBoxFlat.new()
+    base_style.bg_color = Color(0.035, 0.055, 0.055, 0.58)
+    base_style.border_color = Color(0.82, 0.9, 0.82, 0.92)
+    base_style.set_border_width_all(3)
+    base_style.set_corner_radius_all(82)
+    base.add_theme_stylebox_override("panel", base_style)
+    root.add_child(base)
+
+    var inner := Panel.new()
+    inner.name = "JoystickThumb"
+    inner.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+    inner.position = Vector2(-31, -31)
+    inner.size = Vector2(62, 62)
+    inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var thumb_style := StyleBoxFlat.new()
+    thumb_style.bg_color = Color(0.72, 0.82, 0.75, 0.88)
+    thumb_style.border_color = Color(0.98, 1.0, 0.96, 0.98)
+    thumb_style.set_border_width_all(2)
+    thumb_style.set_corner_radius_all(31)
+    inner.add_theme_stylebox_override("panel", thumb_style)
+    base.add_child(inner)
 
 func _button(root: Control, caption: String, offset: Vector2, size: Vector2, action: String) -> void:
     var b:=Button.new()
@@ -339,7 +344,22 @@ func _button(root: Control, caption: String, offset: Vector2, size: Vector2, act
     b.size=size
     b.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
     b.position=offset
-    b.modulate=Color(0.8,0.9,0.82,0.84)
+    b.custom_minimum_size = size
+    b.add_theme_font_size_override("font_size", 19 if caption == "FIRE" else 15)
+    var normal := StyleBoxFlat.new()
+    normal.bg_color = Color(0.055, 0.085, 0.075, 0.78)
+    normal.border_color = Color(0.78, 0.88, 0.78, 0.92)
+    normal.set_border_width_all(2)
+    normal.set_corner_radius_all(12)
+    b.add_theme_stylebox_override("normal", normal)
+    var pressed_style := StyleBoxFlat.new()
+    pressed_style.bg_color = Color(0.35, 0.48, 0.36, 0.94)
+    pressed_style.border_color = Color(1.0, 1.0, 1.0, 1.0)
+    pressed_style.set_border_width_all(3)
+    pressed_style.set_corner_radius_all(12)
+    b.add_theme_stylebox_override("pressed", pressed_style)
+    b.add_theme_color_override("font_color", Color(0.94, 0.98, 0.92))
+    b.add_theme_color_override("font_pressed_color", Color.WHITE)
     b.pressed.connect(func():
         match action:
             "fire": player.shoot()
