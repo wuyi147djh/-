@@ -68,7 +68,7 @@ func _build_world() -> void:
     var hdr_path := "res://assets/ironline/hdr/bambanani_sunset_2k.hdr"
     if ResourceLoader.exists(hdr_path):
         panorama.panorama = load(hdr_path)
-        panorama.energy_multiplier = 0.82
+        panorama.energy_multiplier = 0.58
         sky.sky_material = panorama
     else:
         var sm := ProceduralSkyMaterial.new()
@@ -79,19 +79,19 @@ func _build_world() -> void:
         sky.sky_material = sm
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-    env.ambient_light_color = Color(0.52, 0.56, 0.62)
-    env.ambient_light_energy = 0.78
+    env.ambient_light_color = Color(0.38, 0.42, 0.48)
+    env.ambient_light_energy = 0.48
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.fog_enabled = true
     env.fog_light_color = Color(0.48, 0.55, 0.58)
-    env.fog_density = 0.0009
+    env.fog_density = 0.00012
     env.sdfgi_enabled = false
     we.environment = env
     add_child(we)
 
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-38, -32, 0)
-    sun.light_energy = 1.55
+    sun.light_energy = 0.95
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 120.0
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
@@ -133,8 +133,9 @@ func _add_static_collisions(root: Node) -> void:
 func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
-    # Spawn just outside the south entrance, facing into the objective square.
-    player.position = Vector3(0.0, 1.2, 10.2)
+    # Spawn at the documented south-side defender entrance, outside the arch geometry, facing north into the courtyard.
+    player.position = Vector3(0.0, 1.2, 20.6)
+    player.rotation.y = 0.0
     add_child(player)
     player.fired.connect(_on_player_fired)
 func _spawn_enemy(pos: Vector3) -> void:
