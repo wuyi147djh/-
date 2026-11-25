@@ -97,7 +97,7 @@ func _build_world() -> void:
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
     add_child(sun)
 
-    var world_path := "res://assets/world/tactical_hill_town_site_a.glb"
+    var world_path := "res://assets/world/battle_royale_town_airfield.glb"
     if not ResourceLoader.exists(world_path):
         push_error("CRITICAL: complete town/airfield GLB missing. No primitive or low-poly fallback is permitted.")
         return
@@ -106,7 +106,7 @@ func _build_world() -> void:
         push_error("CRITICAL: town/airfield GLB failed to import.")
         return
     var world_instance := world_scene.instantiate()
-    world_instance.name = "TACTICAL_HILL_TOWN_OBJECTIVE_SITE_A"
+    world_instance.name = "FRONTIER_TOWN_AIRFIELD_OBJECTIVE"
     world_instance.position = Vector3.ZERO
     world_instance.scale = Vector3.ONE
     add_child(world_instance)
