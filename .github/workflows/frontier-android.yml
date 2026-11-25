@@ -61,6 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          npm install --global @gltf-transform/cli
           cd "$GITHUB_WORKSPACE/PROJECT_FRONTIER"
           # Decode meshopt-compressed geometry and remove KHR_mesh_quantization
           # before Godot 4.3's importer sees the assets.
