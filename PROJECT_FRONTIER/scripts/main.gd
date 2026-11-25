@@ -32,11 +32,11 @@ func _ready() -> void:
     # Enemy squad is deliberately placed inside the playable objective courtyard,
     # not scattered across the old oversized terrain coordinates.
     var enemy_spawns: Array[Vector3] = [
-        Vector3(-7.0, 0.15, 5.0), Vector3(7.0, 0.15, 5.0),
-        Vector3(-10.0, 0.15, 0.0), Vector3(10.0, 0.15, 0.0),
-        Vector3(-6.0, 0.15, -5.0), Vector3(6.0, 0.15, -5.0),
-        Vector3(-2.0, 0.15, 8.0), Vector3(2.0, 0.15, -8.0),
-        Vector3(0.0, 0.15, -2.0)
+        Vector3(-7.0, 1.0, 5.0), Vector3(7.0, 1.0, 5.0),
+        Vector3(-10.0, 1.0, 0.0), Vector3(10.0, 1.0, 0.0),
+        Vector3(-6.0, 1.0, -5.0), Vector3(6.0, 1.0, -5.0),
+        Vector3(-2.0, 1.0, 8.0), Vector3(2.0, 1.0, -8.0),
+        Vector3(0.0, 1.0, -2.0)
     ]
     for spawn_point in enemy_spawns:
         _spawn_enemy(spawn_point)
