@@ -303,6 +303,36 @@ func _build_hud() -> void:
     hint.add_theme_font_size_override("font_size",15)
     hint.add_theme_color_override("font_color",Color(0.85,0.88,0.82,0.8))
     root.add_child(hint)
+    _build_virtual_joystick(root)
+
+func _build_virtual_joystick(root: Control) -> void:
+    # The player already reads left-side touch drags. This visible stick shows
+    # the touch zone and its live displacement instead of leaving movement invisible.
+    var stick := Control.new()
+    stick.name = "MovementJoystick"
+    stick.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+    stick.position = Vector2(34, -188)
+    stick.size = Vector2(154, 154)
+    stick.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var visual := GDScript.new()
+    visual.source_code = """extends Control
+var actor: Node
+func _process(_delta):
+    queue_redraw()
+func _draw():
+    var center = size * 0.5
+    draw_circle(center, 68.0, Color(0.05, 0.08, 0.08, 0.42))
+    draw_arc(center, 68.0, 0.0, TAU, 64, Color(0.78, 0.86, 0.80, 0.78), 3.0, true)
+    var offset = Vector2.ZERO
+    if is_instance_valid(actor):
+        offset = actor.move_vector * 34.0
+    draw_circle(center + offset, 29.0, Color(0.72, 0.82, 0.75, 0.68))
+    draw_arc(center + offset, 29.0, 0.0, TAU, 48, Color(0.94, 0.97, 0.92, 0.9), 2.0, true)
+"""
+    stick.set_script(visual)
+    stick.set("actor", player)
+    root.add_child(stick)
+
 func _button(root: Control, caption: String, offset: Vector2, size: Vector2, action: String) -> void:
     var b:=Button.new()
     b.text=caption
