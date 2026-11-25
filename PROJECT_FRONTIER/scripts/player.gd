@@ -9,6 +9,7 @@ var health := 100
 var aiming := false
 var crouched := false
 var fire_cd := 0.0
+var fire_held := false
 var look_touch := -1
 var move_touch := -1
 var last_touch := Vector2.ZERO
@@ -61,7 +62,7 @@ func _physics_process(delta: float) -> void:
     velocity.z = dir.z * SPEED * (0.55 if crouched else 1.0)
     if not is_on_floor(): velocity.y -= 24.0 * delta
     move_and_slide()
-    if Input.is_action_just_pressed("fire"): shoot()
+    if fire_held or Input.is_action_just_pressed("fire"): shoot()
     if Input.is_action_just_pressed("jump"): jump()
     if Input.is_action_just_pressed("reload"): reload_requested.emit()
     if Input.is_action_just_pressed("crouch"): toggle_crouch()
@@ -95,6 +96,13 @@ func _unhandled_input(event: InputEvent) -> void:
             last_touch = event.position
         elif event.index == move_touch:
             move_vector = ((event.position - move_origin) / 75.0).limit_length(1.0)
+func set_fire_held(value: bool) -> void:
+    fire_held = value
+
+func set_aiming(value: bool) -> void:
+    aiming = value
+    camera.fov = 58.0 if aiming else 82.0
+
 func shoot() -> void:
     if fire_cd > 0: return
     fire_cd = 0.105
@@ -108,8 +116,7 @@ func toggle_crouch() -> void:
     crouched = not crouched
     camera.position.y = 1.0 if crouched else 1.52
 func toggle_aim() -> void:
-    aiming = not aiming
-    camera.fov = 58 if aiming else 82
+    set_aiming(not aiming)
 func take_damage(amount: int) -> void:
     health = max(0, health - amount)
     if health == 0:
