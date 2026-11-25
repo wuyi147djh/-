@@ -357,7 +357,13 @@ func _build_virtual_joystick(root: Control) -> void:
 
 func _button(root: Control, caption: String, offset: Vector2, size: Vector2, action: String) -> void:
     var b:=Button.new()
-    b.text=caption
+    b.text = ""
+    b.tooltip_text = caption
+    b.icon = load("res://assets/ui/icons/%s.svg" % action) as Texture2D
+    b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+    b.expand_icon = true
+    b.icon_max_width = int(min(size.x, size.y) * 0.52)
     b.size=size
     b.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
     b.position=offset
