@@ -356,35 +356,54 @@ func _build_virtual_joystick(root: Control) -> void:
     base.add_child(joystick_thumb)
 
 func _button(root: Control, caption: String, offset: Vector2, size: Vector2, action: String) -> void:
-    var b:=Button.new()
+    var b := Button.new()
+    b.name = "TouchButton_" + action
     b.text = ""
     b.tooltip_text = caption
-    b.icon = load("res://assets/ui/icons/%s.svg" % action) as Texture2D
-    b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    b.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
-    b.expand_icon = true
-    b.icon_max_width = int(min(size.x, size.y) * 0.52)
-    b.size=size
-    b.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-    b.position=offset
+    b.focus_mode = Control.FOCUS_NONE
+    b.mouse_filter = Control.MOUSE_FILTER_STOP
+    b.anchor_left = 1.0
+    b.anchor_right = 1.0
+    b.anchor_top = 1.0
+    b.anchor_bottom = 1.0
+    b.offset_left = offset.x
+    b.offset_top = offset.y
+    b.offset_right = offset.x + size.x
+    b.offset_bottom = offset.y + size.y
     b.custom_minimum_size = size
-    b.add_theme_font_size_override("font_size", 20 if caption == "FIRE" else 14)
+    b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    b.expand_icon = true
+    b.icon_max_width = int(min(size.x, size.y) * 0.56)
+    var icon_path := "res://assets/ui/icons/%s.svg" % action
+    if ResourceLoader.exists(icon_path):
+        var icon_texture := load(icon_path) as Texture2D
+        if icon_texture != null:
+            b.icon = icon_texture
+        else:
+            push_error("HUD icon failed to load as Texture2D: " + icon_path)
+    else:
+        push_error("HUD icon asset missing: " + icon_path)
+
     var normal := StyleBoxFlat.new()
-    normal.bg_color = Color(0.055, 0.085, 0.075, 0.78)
-    normal.border_color = Color(0.78, 0.88, 0.78, 0.92)
+    normal.bg_color = Color(0.045, 0.065, 0.06, 0.82)
+    normal.border_color = Color(0.86, 0.92, 0.86, 0.95)
     normal.set_border_width_all(2)
-    normal.set_corner_radius_all(64 if caption == "FIRE" else 44)
+    normal.set_corner_radius_all(int(min(size.x, size.y) * 0.5))
     b.add_theme_stylebox_override("normal", normal)
+    var hover := StyleBoxFlat.new()
+    hover.bg_color = Color(0.13, 0.19, 0.15, 0.9)
+    hover.border_color = Color(0.95, 1.0, 0.94, 1.0)
+    hover.set_border_width_all(2)
+    hover.set_corner_radius_all(int(min(size.x, size.y) * 0.5))
+    b.add_theme_stylebox_override("hover", hover)
     var pressed_style := StyleBoxFlat.new()
-    pressed_style.bg_color = Color(0.35, 0.48, 0.36, 0.94)
+    pressed_style.bg_color = Color(0.34, 0.48, 0.36, 0.96)
     pressed_style.border_color = Color(1.0, 1.0, 1.0, 1.0)
     pressed_style.set_border_width_all(3)
-    pressed_style.set_corner_radius_all(64 if caption == "FIRE" else 44)
+    pressed_style.set_corner_radius_all(int(min(size.x, size.y) * 0.5))
     b.add_theme_stylebox_override("pressed", pressed_style)
-    b.add_theme_color_override("font_color", Color(0.94, 0.98, 0.92))
-    b.add_theme_color_override("font_pressed_color", Color.WHITE)
-    # Touch-friendly controls: fire and aim are held actions, not one-shot clicks.
-    b.focus_mode = Control.FOCUS_NONE
+
+    root.add_child(b)
     if action == "fire":
         b.button_down.connect(func(): player.set_fire_held(true))
         b.button_up.connect(func(): player.set_fire_held(false))
@@ -398,7 +417,7 @@ func _button(root: Control, caption: String, offset: Vector2, size: Vector2, act
                 "jump": player.jump()
                 "crouch": player.toggle_crouch()
         )
-    root.add_child(b)
+
 func _reload() -> void:
     if ammo >= 30 or reserve <= 0:
         return
