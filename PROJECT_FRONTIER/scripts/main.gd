@@ -15,6 +15,7 @@ var mission_time := 0.0
 var kills := 0
 var kills_label: Label
 func _ready() -> void:
+    _ensure_game_input_actions()
     _build_world()
     _spawn_player()
     _build_hud()
@@ -347,3 +348,29 @@ func _enemy_shot(pos: Vector3) -> void:
     sound.global_position = pos
     sound.play()
     sound.finished.connect(sound.queue_free)
+
+
+func _ensure_game_input_actions() -> void:
+    var keys := {
+        "move_forward": KEY_W,
+        "move_back": KEY_S,
+        "move_left": KEY_A,
+        "move_right": KEY_D,
+        "jump": KEY_SPACE,
+        "reload": KEY_R,
+        "crouch": KEY_CTRL,
+        "aim": KEY_SHIFT
+    }
+    for action in keys:
+        if not InputMap.has_action(action):
+            InputMap.add_action(action)
+        if InputMap.action_get_events(action).is_empty():
+            var key_event := InputEventKey.new()
+            key_event.physical_keycode = keys[action]
+            InputMap.action_add_event(action, key_event)
+    if not InputMap.has_action("fire"):
+        InputMap.add_action("fire")
+    if InputMap.action_get_events("fire").is_empty():
+        var mouse_event := InputEventMouseButton.new()
+        mouse_event.button_index = MOUSE_BUTTON_LEFT
+        InputMap.action_add_event("fire", mouse_event)
