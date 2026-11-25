@@ -16,6 +16,7 @@ var move_vector := Vector2.ZERO
 var recoil := 0.0
 var muzzle_light: OmniLight3D
 func _ready() -> void:
+    _ensure_input_actions()
     var col := CollisionShape3D.new()
     var capsule := CapsuleShape3D.new()
     capsule.radius = 0.38
@@ -109,3 +110,26 @@ func take_damage(amount: int) -> void:
     if health == 0:
         global_position = Vector3(0, 1.2, 5)
         health = 100
+
+func _ensure_input_actions() -> void:
+    var keys := {
+        "move_forward": KEY_W,
+        "move_back": KEY_S,
+        "move_left": KEY_A,
+        "move_right": KEY_D,
+        "jump": KEY_SPACE,
+        "reload": KEY_R,
+        "crouch": KEY_CTRL,
+        "aim": KEY_SHIFT
+    }
+    for action in keys:
+        if not InputMap.has_action(action):
+            InputMap.add_action(action)
+        var ev := InputEventKey.new()
+        ev.physical_keycode = keys[action]
+        InputMap.action_add_event(action, ev)
+    if not InputMap.has_action("fire"):
+        InputMap.add_action("fire")
+    var mouse_fire := InputEventMouseButton.new()
+    mouse_fire.button_index = MOUSE_BUTTON_LEFT
+    InputMap.action_add_event("fire", mouse_fire)
