@@ -138,6 +138,7 @@ func _spawn_player() -> void:
     player.rotation.y = 0.0
     add_child(player)
     player.fired.connect(_on_player_fired)
+    player.reload_requested.connect(_reload)
 func _spawn_enemy(pos: Vector3) -> void:
     var e := CharacterBody3D.new()
     e.position = pos
@@ -175,20 +176,30 @@ func _physics_process(d):
         return
     var v = target.global_position - global_position
     v.y = 0
-    if v.length() > 13.0:
-        velocity = v.normalized() * 2.7
+    var distance = v.length()
+    if distance > 13.0:
+        velocity.x = v.normalized().x * 2.7
+        velocity.z = v.normalized().z * 2.7
     else:
-        velocity = Vector3.ZERO
-    if v.length() > 0.2:
+        velocity.x = move_toward(velocity.x, 0.0, 8.0 * d)
+        velocity.z = move_toward(velocity.z, 0.0, 8.0 * d)
+    if distance > 0.2:
         look_at(global_position + v, Vector3.UP)
     velocity.y -= 24.0 * d
     move_and_slide()
     attack_cd -= d
-    if v.length() < 32.0 and attack_cd <= 0.0:
-        attack_cd = 1.35
-        target.take_damage(5)
-        if is_instance_valid(game):
-            game._enemy_shot(global_position)
+    # Fire only when the player is actually visible; walls and buildings block attacks.
+    if distance < 32.0 and attack_cd <= 0.0:
+        var from = global_position + Vector3.UP * 1.25
+        var to = target.global_position + Vector3.UP * 1.1
+        var query = PhysicsRayQueryParameters3D.create(from, to)
+        query.exclude = [self]
+        var sight = get_world_3d().direct_space_state.intersect_ray(query)
+        if sight and sight.collider == target:
+            attack_cd = 1.35
+            target.take_damage(5)
+            if is_instance_valid(game):
+                game._enemy_shot(global_position)
 func hit(dmg):
     hp -= dmg
     if hp <= 0:
