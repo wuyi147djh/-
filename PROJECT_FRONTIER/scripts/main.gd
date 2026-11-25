@@ -83,7 +83,7 @@ func _build_world() -> void:
     env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color(0.38, 0.42, 0.48)
-    env.ambient_light_energy = 0.48
+    env.ambient_light_energy = 0.34
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.fog_enabled = true
     env.fog_light_color = Color(0.48, 0.55, 0.58)
@@ -94,7 +94,7 @@ func _build_world() -> void:
 
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-38, -32, 0)
-    sun.light_energy = 0.95
+    sun.light_energy = 0.72
     sun.shadow_enabled = true
     sun.directional_shadow_max_distance = 120.0
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
@@ -137,7 +137,7 @@ func _spawn_player() -> void:
     player = CharacterBody3D.new()
     player.set_script(PLAYER_SCRIPT)
     # Restore the proven courtyard-facing spawn used by build #62; keep the corrected lighting from build #64.
-    player.position = Vector3(0.0, 1.2, 10.2)
+    player.position = Vector3(0.0, 1.2, 7.5)
     player.rotation.y = 0.0
     add_child(player)
     player.fired.connect(_on_player_fired)
@@ -255,8 +255,8 @@ func _build_hud() -> void:
     health_bar.show_percentage = false
     health_bar.custom_minimum_size = Vector2(180, 18)
     health_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    health_bar.position = Vector2(-190, 52)
-    health_bar.size = Vector2(170, 16)
+    health_bar.position = Vector2(-190, 50)
+    health_bar.size = Vector2(170, 14)
     var health_fill := StyleBoxFlat.new()
     health_fill.bg_color = Color(0.72, 0.16, 0.12, 0.95)
     health_fill.corner_radius_top_left = 3
@@ -274,7 +274,7 @@ func _build_hud() -> void:
     root.add_child(health_bar)
     kills_label = Label.new()
     kills_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    kills_label.position = Vector2(-250, 52)
+    kills_label.position = Vector2(-250, 82)
     kills_label.add_theme_font_size_override("font_size", 16)
     kills_label.add_theme_color_override("font_color", Color(0.78, 0.84, 0.75))
     root.add_child(kills_label)
