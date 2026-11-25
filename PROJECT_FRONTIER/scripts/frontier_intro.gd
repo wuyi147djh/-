@@ -111,7 +111,7 @@ func _play_opening_sequence() -> void:
         ["2031年，全球能源与航运网络接连中断。", "YEAR 2031  //  GLOBAL CRISIS"],
         ["边境通讯突然沉默。一支联合侦察队在北部群山失联。", "SIGNAL LOST  //  NORTHERN FRONTIER"],
         ["最后一段加密讯息指向一座被遗弃的前沿机场。", "LAST KNOWN POSITION  //  AIRFIELD"],
-        ["你的呼号：SPECTER- actual。任务：进入战区，查明真相。", "MISSION 01  //  IRON SILENCE"]
+        ["你的呼号：SPECTER-01。任务：进入战区，查明真相。", "MISSION 01  //  IRON SILENCE"]
     ]
     for beat in beats:
         if not _sequence_running:
