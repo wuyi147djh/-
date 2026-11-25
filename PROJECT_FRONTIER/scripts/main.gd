@@ -15,6 +15,7 @@ var reserve := 180
 var mission_time := 0.0
 var kills := 0
 var kills_label: Label
+var joystick_thumb: Panel
 func _ready() -> void:
     _ensure_game_input_actions()
     _build_world()
@@ -62,6 +63,8 @@ func _process(delta: float) -> void:
         health_bar.value = player.health
     if is_instance_valid(kills_label):
         kills_label.text = "CONFIRMED KILLS  %02d / 09" % kills
+    if is_instance_valid(joystick_thumb) and is_instance_valid(player):
+        joystick_thumb.position = Vector2(51, 51) + player.move_vector * 38.0
 func _build_world() -> void:
     var we := WorldEnvironment.new()
     var env := Environment.new()
@@ -306,37 +309,49 @@ func _build_hud() -> void:
     _build_virtual_joystick(root)
 
 func _build_virtual_joystick(root: Control) -> void:
-    # Use native themed Controls rather than a runtime-generated drawing script.
-    # The left-side touch region remains pass-through so Player._unhandled_input
-    # receives the drag and updates move_vector.
+    # Standard FPS left thumbstick: fixed outer ring, four directional marks,
+    # and a movable inner thumb that tracks the player's actual touch vector.
     var base := Panel.new()
     base.name = "MovementJoystick"
     base.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-    base.position = Vector2(34, -196)
+    base.position = Vector2(34, -214)
     base.size = Vector2(164, 164)
     base.mouse_filter = Control.MOUSE_FILTER_IGNORE
     base.z_index = 30
     var base_style := StyleBoxFlat.new()
-    base_style.bg_color = Color(0.035, 0.055, 0.055, 0.58)
+    base_style.bg_color = Color(0.035, 0.055, 0.055, 0.52)
     base_style.border_color = Color(0.82, 0.9, 0.82, 0.92)
     base_style.set_border_width_all(3)
     base_style.set_corner_radius_all(82)
     base.add_theme_stylebox_override("panel", base_style)
     root.add_child(base)
 
-    var inner := Panel.new()
-    inner.name = "JoystickThumb"
-    inner.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-    inner.position = Vector2(-31, -31)
-    inner.size = Vector2(62, 62)
-    inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    for mark in [
+        {"text":"▲", "pos":Vector2(69, 7)},
+        {"text":"▼", "pos":Vector2(69, 133)},
+        {"text":"◀", "pos":Vector2(7, 69)},
+        {"text":"▶", "pos":Vector2(133, 69)}
+    ]:
+        var direction := Label.new()
+        direction.text = mark.text
+        direction.position = mark.pos
+        direction.add_theme_font_size_override("font_size", 14)
+        direction.add_theme_color_override("font_color", Color(0.85, 0.92, 0.86, 0.85))
+        direction.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        base.add_child(direction)
+
+    joystick_thumb = Panel.new()
+    joystick_thumb.name = "JoystickThumb"
+    joystick_thumb.position = Vector2(51, 51)
+    joystick_thumb.size = Vector2(62, 62)
+    joystick_thumb.mouse_filter = Control.MOUSE_FILTER_IGNORE
     var thumb_style := StyleBoxFlat.new()
-    thumb_style.bg_color = Color(0.72, 0.82, 0.75, 0.88)
+    thumb_style.bg_color = Color(0.72, 0.82, 0.75, 0.9)
     thumb_style.border_color = Color(0.98, 1.0, 0.96, 0.98)
     thumb_style.set_border_width_all(2)
     thumb_style.set_corner_radius_all(31)
-    inner.add_theme_stylebox_override("panel", thumb_style)
-    base.add_child(inner)
+    joystick_thumb.add_theme_stylebox_override("panel", thumb_style)
+    base.add_child(joystick_thumb)
 
 func _button(root: Control, caption: String, offset: Vector2, size: Vector2, action: String) -> void:
     var b:=Button.new()
