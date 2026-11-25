@@ -1,5 +1,6 @@
 extends CharacterBody3D
 signal fired(origin: Vector3, direction: Vector3)
+signal reload_requested
 const SPEED := 6.2
 const SENS := 0.0022
 var camera: Camera3D
@@ -61,6 +62,10 @@ func _physics_process(delta: float) -> void:
     if not is_on_floor(): velocity.y -= 24.0 * delta
     move_and_slide()
     if Input.is_action_just_pressed("fire"): shoot()
+    if Input.is_action_just_pressed("jump"): jump()
+    if Input.is_action_just_pressed("reload"): reload_requested.emit()
+    if Input.is_action_just_pressed("crouch"): toggle_crouch()
+    if Input.is_action_just_pressed("aim"): toggle_aim()
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
         rotate_y(-event.relative.x * SENS)
@@ -125,11 +130,13 @@ func _ensure_input_actions() -> void:
     for action in keys:
         if not InputMap.has_action(action):
             InputMap.add_action(action)
-        var ev := InputEventKey.new()
-        ev.physical_keycode = keys[action]
-        InputMap.action_add_event(action, ev)
+        if InputMap.action_get_events(action).is_empty():
+            var ev := InputEventKey.new()
+            ev.physical_keycode = keys[action]
+            InputMap.action_add_event(action, ev)
     if not InputMap.has_action("fire"):
         InputMap.add_action("fire")
-    var mouse_fire := InputEventMouseButton.new()
-    mouse_fire.button_index = MOUSE_BUTTON_LEFT
-    InputMap.action_add_event("fire", mouse_fire)
+    if InputMap.action_get_events("fire").is_empty():
+        var mouse_fire := InputEventMouseButton.new()
+        mouse_fire.button_index = MOUSE_BUTTON_LEFT
+        InputMap.action_add_event("fire", mouse_fire)
