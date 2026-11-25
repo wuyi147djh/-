@@ -383,14 +383,21 @@ func _button(root: Control, caption: String, offset: Vector2, size: Vector2, act
     b.add_theme_stylebox_override("pressed", pressed_style)
     b.add_theme_color_override("font_color", Color(0.94, 0.98, 0.92))
     b.add_theme_color_override("font_pressed_color", Color.WHITE)
-    b.pressed.connect(func():
-        match action:
-            "fire": player.shoot()
-            "reload": _reload()
-            "jump": player.jump()
-            "crouch": player.toggle_crouch()
-            "aim": player.toggle_aim()
-    )
+    # Touch-friendly controls: fire and aim are held actions, not one-shot clicks.
+    b.focus_mode = Control.FOCUS_NONE
+    if action == "fire":
+        b.button_down.connect(func(): player.set_fire_held(true))
+        b.button_up.connect(func(): player.set_fire_held(false))
+    elif action == "aim":
+        b.button_down.connect(func(): player.set_aiming(true))
+        b.button_up.connect(func(): player.set_aiming(false))
+    else:
+        b.pressed.connect(func():
+            match action:
+                "reload": _reload()
+                "jump": player.jump()
+                "crouch": player.toggle_crouch()
+        )
     root.add_child(b)
 func _reload() -> void:
     if ammo >= 30 or reserve <= 0:
